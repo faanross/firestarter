@@ -2,11 +2,13 @@ package main
 
 import (
 	"errors"
+	"firestarter/internal/control"
 	"firestarter/internal/factory"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -22,8 +24,11 @@ func main() {
 	// Keep track of created listeners
 	var listeners []*factory.Listener
 
+	// create wait group to ensure thread sync
+	var wg sync.WaitGroup
+	
 	for _, port := range serverPorts {
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 		l, err := listenerFactory.CreateListener(port)
 		if err != nil {
 			fmt.Printf("Error creating service: %v\n", err)
@@ -32,7 +37,7 @@ func main() {
 		// Store the listener
 		listeners = append(listeners, l)
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 		go func(l *factory.Listener) {
 			err := l.Start()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -46,22 +51,6 @@ func main() {
 	// Block until we receive a termination signal
 	sig := <-signalChan
 	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
-	StopAllListeners(listeners)
+	control.StopAllListeners(listeners)
 
-}
-
-func StopAllListeners(listeners []*factory.Listener) {
-	// Wait for 30 seconds before starting the graceful shutdown
-	fmt.Println("Shutting down listeners...")
-	time.Sleep(1 * time.Second)
-
-	// Gracefully stop each listener
-	for _, l := range listeners {
-		err := l.Stop()
-		if err != nil {
-			fmt.Printf("Error stopping listener %s: %v\n", l.ID, err)
-		}
-	}
-
-	fmt.Println("All listeners shut down. Exiting...")
 }
