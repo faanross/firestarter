@@ -1,6 +1,8 @@
 package main
 
 import (
+	"firestarter/internal/router"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 )
@@ -8,11 +10,14 @@ import (
 const serverAddr = ":7777"
 
 func main() {
+
+	r := chi.NewRouter()
+
+	router.SetupRoutes(r)
+
 	server := &http.Server{
-		Addr: serverAddr,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Default handler that does nothing
-		}),
+		Addr:    serverAddr,
+		Handler: r,
 	}
 
 	log.Printf("Starting HTTP server on %v", serverAddr)
