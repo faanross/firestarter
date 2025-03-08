@@ -9,6 +9,10 @@
 - capable of producing multiple listeners
 - set this up in `/internal/factory/factory.go`
 
-### implement graceful shutdown + Stop() 
-- Use context + sig term to ensure all listeners are shut down gracefully when server closes
-- Add a Stop() method to listener to give us ability to intentionally shut down listener
+### Implement Stop()
+- add a `listeners` slice pointer to keep track of all listeners 
+- add a Stop() method to listener to give us ability to intentionally shut down listener
+- `listeners` can be iterated through to shut down all listeners
+
+### Graceful shutdown
+- use context + sig term to ensure shutting down server gracefully exits all listeners
