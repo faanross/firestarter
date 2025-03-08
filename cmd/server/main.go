@@ -5,12 +5,18 @@ import (
 	"firestarter/internal/factory"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
 var serverPorts = []string{"7777", "8888", "9999"}
 
 func main() {
+	// Setup signal channel for graceful shutdown
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
 	listenerFactory := factory.NewListenerFactory()
 	// Keep track of created listeners
@@ -36,14 +42,18 @@ func main() {
 	}
 
 	time.Sleep(2 * time.Second)
-	TestListenerStop(listeners)
+
+	// Block until we receive a termination signal
+	sig := <-signalChan
+	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
+	StopAllListeners(listeners)
 
 }
 
-func TestListenerStop(listeners []*factory.Listener) {
+func StopAllListeners(listeners []*factory.Listener) {
 	// Wait for 30 seconds before starting the graceful shutdown
-	fmt.Println("All listeners started. Will begin shutdown in 15 seconds...")
-	time.Sleep(15 * time.Second)
+	fmt.Println("Shutting down listeners...")
+	time.Sleep(1 * time.Second)
 
 	// Gracefully stop each listener
 	for _, l := range listeners {
@@ -51,7 +61,6 @@ func TestListenerStop(listeners []*factory.Listener) {
 		if err != nil {
 			fmt.Printf("Error stopping listener %s: %v\n", l.ID, err)
 		}
-		time.Sleep(2 * time.Second) // Small delay between stopping listeners
 	}
 
 	fmt.Println("All listeners shut down. Exiting...")
