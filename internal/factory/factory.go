@@ -1,11 +1,13 @@
 package factory
 
 import (
+	"context"
 	"firestarter/internal/router"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"math/rand"
 	"net/http"
+	"time"
 )
 
 type ListenerFactory struct{}
@@ -19,6 +21,7 @@ type Listener struct {
 	ID     string
 	Port   string
 	Router *chi.Mux
+	server *http.Server
 }
 
 // CreateListener generates a new listener with a random port and unique ID
@@ -42,5 +45,34 @@ func (f *ListenerFactory) CreateListener(port string) (*Listener, error) {
 func (l *Listener) Start() error {
 	addr := fmt.Sprintf(":%s", l.Port)
 	fmt.Printf("|START| Listener %s serving on %s\n", l.ID, addr)
-	return http.ListenAndServe(addr, l.Router)
+
+	// Create the server instance
+	l.server = &http.Server{
+		Addr:    addr,
+		Handler: l.Router,
+	}
+
+	return l.server.ListenAndServe()
+}
+
+// Stop gracefully shuts down the HTTP server with a timeout
+func (l *Listener) Stop() error {
+	if l.server == nil {
+		return fmt.Errorf("server not started")
+	}
+
+	// Create a context with a timeout for shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	fmt.Printf("|STOP| Shutting down listener %s on port %s\n", l.ID, l.Port)
+
+	// Shutdown the server gracefully
+	err := l.server.Shutdown(ctx)
+	if err != nil {
+		return fmt.Errorf("error shutting down listener %s: %v", l.ID, err)
+	}
+
+	fmt.Printf("|STOP| Listener %s on port %s shut down successfully\n", l.ID, l.Port)
+	return nil
 }
