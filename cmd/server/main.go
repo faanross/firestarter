@@ -1,27 +1,34 @@
 package main
 
 import (
-	"firestarter/internal/router"
-	"github.com/go-chi/chi/v5"
-	"log"
-	"net/http"
+	"firestarter/internal/factory"
+	"fmt"
+	"time"
 )
 
-const serverAddr = ":7777"
+var serverPorts = []string{"7777", "8888", "9999"}
 
 func main() {
 
-	r := chi.NewRouter()
+	listenerFactory := factory.NewListenerFactory()
 
-	router.SetupRoutes(r)
+	for _, port := range serverPorts {
+		time.Sleep(2 * time.Second)
+		l, err := listenerFactory.CreateListener(port)
+		if err != nil {
+			fmt.Printf("Error creating service: %v\n", err)
+			continue
+		}
+		time.Sleep(2 * time.Second)
+		go func(l *factory.Listener) {
 
-	server := &http.Server{
-		Addr:    serverAddr,
-		Handler: r,
+			err := l.Start()
+			if err != nil {
+				fmt.Printf("Error starting listener %s: %v\n", l.ID, err)
+			}
+		}(l)
 	}
 
-	log.Printf("Starting HTTP server on %v", serverAddr)
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("Error starting server: %v", err)
-	}
+	select {}
+
 }
