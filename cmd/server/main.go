@@ -2,10 +2,12 @@
 package main
 
 import (
+	"bufio"
 	"firestarter/internal/factory"
 	"firestarter/internal/manager"
 	"firestarter/internal/service"
 	"firestarter/internal/types"
+	"firestarter/internal/websocket"
 	"fmt"
 	"os"
 	"os/signal"
@@ -29,6 +31,10 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
+	// Start our Websocket (:8080) for UI integration
+	websocket.StartWebSocketServer()
+	time.Sleep(5 * time.Second)
+
 	// Create the components
 	abstractFactory := factory.NewAbstractFactory()
 	listenerManager := manager.NewListenerManager()
@@ -36,6 +42,8 @@ func main() {
 
 	// Wait group for synchronization
 	var wg sync.WaitGroup
+
+	PressAnyKey()
 
 	// Create and start listeners based on configurations
 	for _, config := range listenerConfigs {
@@ -55,7 +63,7 @@ func main() {
 
 	}
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	fmt.Printf("Managing %d active listeners.\n",
 		listenerManager.Count())
 
@@ -65,4 +73,16 @@ func main() {
 
 	// Use the service to stop all listeners
 	listenerService.StopAllListeners(&wg)
+}
+
+// PressAnyKey displays a message and waits for the user to press any key before continuing
+func PressAnyKey() {
+	fmt.Println("Press any key to start creating listeners...")
+
+	// Create a reader to read a single byte from stdin
+	reader := bufio.NewReader(os.Stdin)
+	_, _ = reader.ReadString('\n')
+
+	// Optional: Clean any leftover newline characters
+	fmt.Println() // Add a newline after input for cleaner output
 }

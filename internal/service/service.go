@@ -88,7 +88,6 @@ func (s *ListenerService) StopAllListeners(wg *sync.WaitGroup) {
 	// Stop each listener
 	for _, listener := range listeners {
 		id := listener.GetID()
-		fmt.Printf("Stopping listener %s\n", id)
 		err := listener.Stop()
 		if err != nil {
 			fmt.Printf("Error stopping listener %s: %v\n", id, err)
