@@ -21,6 +21,7 @@ var listenerConfigs = []struct {
 }{
 	{"7777", types.H1C}, // HTTP/1.1 on port 7777
 	{"8888", types.H2C}, // HTTP/2 on port 8888
+	{"9999", types.H2C}, // HTTP/2 on port 9999
 }
 
 func main() {
@@ -47,10 +48,7 @@ func main() {
 			fmt.Printf("Error creating service: %v\n", err)
 			continue
 		}
-
-		// Log the protocol being used
-		fmt.Printf("Created %s listener on port %s\n", l.GetProtocol(), config.Port)
-
+		
 		// Store the listener
 		listeners = append(listeners, l)
 		time.Sleep(1 * time.Second)

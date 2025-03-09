@@ -8,17 +8,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"math/rand"
 )
 
 // Factory creates HTTP/2 cleartext listeners
 type Factory struct{}
 
 func (f *Factory) CreateListener(id string, port string) (types.Listener, error) {
-	// If ID is empty, generate a random one
-	if id == "" {
-		id = fmt.Sprintf("listener_%06d", rand.Intn(1000000))
-	}
 
 	// Create a router and set up routes
 	r := chi.NewRouter()
@@ -31,7 +26,7 @@ func (f *Factory) CreateListener(id string, port string) (types.Listener, error)
 	// This allows HTTP/2 connections over cleartext TCP
 	h2cHandler := h2c.NewHandler(r, h2s)
 
-	fmt.Printf("|CREATE| H2C Listener %s configured on port %s\n", id, port)
+	fmt.Printf("|CREATE| HTTP/2 Listener %s configured on port %s\n", id, port)
 
 	// Create a concrete listener with the H2C protocol type
 	concreteListener := listener.NewConcreteListener(id, port, types.H2C, r)

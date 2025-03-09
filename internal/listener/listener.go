@@ -27,7 +27,8 @@ func (l *ConcreteListener) SetHandler(handler http.Handler) {
 // Start will run the configured listener
 func (l *ConcreteListener) Start() error {
 	addr := fmt.Sprintf(":%s", l.Port)
-	fmt.Printf("|START| Listener %s serving on %s\n", l.ID, addr)
+
+	fmt.Printf("|START| %s Listener %s serving on %s\n", l.GetProtocol(), l.ID, addr)
 
 	// Create the server instance
 	l.server = &http.Server{
@@ -90,7 +91,7 @@ func (l *ConcreteListener) GetID() string {
 	return l.ID
 }
 
-// Update the NewConcreteListener function
+// NewConcreteListener constructs ConcreteListener struct
 func NewConcreteListener(id string, port string, protocol types.ProtocolType, router *chi.Mux) *ConcreteListener {
 	return &ConcreteListener{
 		ID:       id,
