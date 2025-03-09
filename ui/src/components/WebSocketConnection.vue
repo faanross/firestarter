@@ -2,7 +2,7 @@
   <div>
     <!-- Connection Status -->
     <div class="status" :class="{ connected: isConnected }">
-      WebSocket Status: {{ connectionStatus }}
+      Server: {{ connectionStatus }}
     </div>
   </div>
 </template>

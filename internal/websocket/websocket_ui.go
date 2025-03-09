@@ -1,10 +1,12 @@
 package websocket
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -17,15 +19,26 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// WebSocketServer represents a simple WebSocket server
+// WebSocketServer represents a WebSocket server that manages client connections
 type WebSocketServer struct {
-	port int
+	port    int
+	clients map[*websocket.Conn]bool
+	mu      sync.Mutex // For thread safety when accessing clients
+}
+
+// Global instance of WebSocketServer to be accessed from other packages
+var GlobalWSServer *WebSocketServer
+
+// GetGlobalWSServer returns the global WebSocket server instance
+func GetGlobalWSServer() *WebSocketServer {
+	return GlobalWSServer
 }
 
 // NewWebSocketServer creates a new WebSocket server
 func NewWebSocketServer(port int) *WebSocketServer {
 	return &WebSocketServer{
-		port: port,
+		port:    port,
+		clients: make(map[*websocket.Conn]bool),
 	}
 }
 
@@ -50,44 +63,92 @@ func (s *WebSocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request
 		log.Printf("Failed to upgrade connection to WebSocket: %v", err)
 		return
 	}
-	defer conn.Close()
 
-	// Log the new connection
+	// Register new client
+	s.mu.Lock()
+	s.clients[conn] = true
+	s.mu.Unlock()
+
 	fmt.Println("New WebSocket connection established")
 
 	// Send a welcome message
-	err = conn.WriteMessage(websocket.TextMessage, []byte("Connected to Go WebSocket Server"))
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
-		return
+	welcomeMsg := Message{
+		Type:    "welcome",
+		Payload: "Connected to FirestarterC2 WebSocket Server",
 	}
+
+	err = s.sendMessage(conn, welcomeMsg)
+	if err != nil {
+		log.Printf("Error sending welcome message: %v", err)
+	}
+
+	// Clean up on disconnect
+	defer func() {
+		conn.Close()
+		s.mu.Lock()
+		delete(s.clients, conn)
+		s.mu.Unlock()
+		fmt.Println("WebSocket connection closed")
+	}()
 
 	// Simple message reading loop
 	for {
-		messageType, message, err := conn.ReadMessage()
+		_, message, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("Error reading message: %v", err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("Error reading message: %v", err)
+			}
 			break
 		}
 
 		// Log the received message
 		log.Printf("Received message: %s", message)
+	}
+}
 
-		// Echo the message back to the client
-		err = conn.WriteMessage(messageType, message)
+// Broadcast sends a message to all connected clients
+func (s *WebSocketServer) Broadcast(msg Message) {
+	// Marshall the message
+	jsonData, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("Error marshalling message: %v", err)
+		return
+	}
+
+	// Lock before accessing clients
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Send to all clients
+	for client := range s.clients {
+		err := client.WriteMessage(websocket.TextMessage, jsonData)
 		if err != nil {
-			log.Printf("Error sending message: %v", err)
-			break
+			log.Printf("Error sending message to client: %v", err)
+			// Client may be disconnected, clean up
+			client.Close()
+			delete(s.clients, client)
 		}
 	}
 }
 
+// sendMessage sends a message to a specific client
+func (s *WebSocketServer) sendMessage(conn *websocket.Conn, msg Message) error {
+	jsonData, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("error marshalling message: %v", err)
+	}
+
+	return conn.WriteMessage(websocket.TextMessage, jsonData)
+}
+
+// StartWebSocketServer initializes and starts the WebSocket server
 func StartWebSocketServer() {
-	// Start WebSocket server in a separate goroutine
-	wsServer := NewWebSocketServer(WebSocketPort)
+	// Create and store global instance
+	GlobalWSServer = NewWebSocketServer(WebSocketPort)
+
 	fmt.Printf("Starting WebSocket server on port %d...\n", WebSocketPort)
 	go func() {
-		err := wsServer.Start()
+		err := GlobalWSServer.Start()
 		if err != nil {
 			log.Fatalf("WebSocket server error: %v", err)
 		}
@@ -96,5 +157,4 @@ func StartWebSocketServer() {
 	// Give the WebSocket server a moment to start
 	time.Sleep(100 * time.Millisecond)
 	fmt.Println("WebSocket server is running. You can now connect from the web UI.")
-
 }

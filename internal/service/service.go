@@ -5,6 +5,7 @@ import (
 	"firestarter/internal/factory"
 	"firestarter/internal/manager"
 	"firestarter/internal/types"
+	"firestarter/internal/websocket"
 	"fmt"
 	"sync"
 )
@@ -37,6 +38,16 @@ func (s *ListenerService) CreateAndStartListener(protocol types.ProtocolType, po
 		return nil, fmt.Errorf("failed to register listener: %w", err)
 	}
 
+	// Broadcast the creation to WebSocket clients
+	wsServer := websocket.GetGlobalWSServer()
+	if wsServer != nil {
+		listenerInfo := websocket.ConvertListener(listener)
+		wsServer.Broadcast(websocket.Message{
+			Type:    websocket.ListenerCreated,
+			Payload: listenerInfo,
+		})
+	}
+
 	// Start the listener in a goroutine
 	wg.Add(1)
 	go func() {
@@ -63,6 +74,16 @@ func (s *ListenerService) StopListener(id string) error {
 		return err
 	}
 
+	// Broadcast the removal to WebSocket clients
+	wsServer := websocket.GetGlobalWSServer()
+	if wsServer != nil {
+		listenerInfo := websocket.ConvertListener(listener)
+		wsServer.Broadcast(websocket.Message{
+			Type:    websocket.ListenerStopped,
+			Payload: listenerInfo,
+		})
+	}
+
 	// Stop the listener
 	err = listener.Stop()
 	if err != nil {
@@ -85,9 +106,21 @@ func (s *ListenerService) StopAllListeners(wg *sync.WaitGroup) {
 	// Get all listeners
 	listeners := s.manager.ListListeners()
 
+	wsServer := websocket.GetGlobalWSServer()
+
 	// Stop each listener
 	for _, listener := range listeners {
 		id := listener.GetID()
+
+		// Broadcast the removal to WebSocket clients
+		if wsServer != nil {
+			listenerInfo := websocket.ConvertListener(listener)
+			wsServer.Broadcast(websocket.Message{
+				Type:    websocket.ListenerStopped,
+				Payload: listenerInfo,
+			})
+		}
+
 		err := listener.Stop()
 		if err != nil {
 			fmt.Printf("Error stopping listener %s: %v\n", id, err)
