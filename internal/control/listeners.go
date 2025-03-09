@@ -7,7 +7,8 @@ import (
 	"time"
 )
 
-func StopAllListeners(listeners []*factory.Listener, wg *sync.WaitGroup) {
+// StopAllListeners gracefully shuts down all active listeners
+func StopAllListeners(listeners []factory.Listener, wg *sync.WaitGroup) {
 	fmt.Println("Shutting down listeners...")
 
 	// Gracefully stop each listener
@@ -15,7 +16,7 @@ func StopAllListeners(listeners []*factory.Listener, wg *sync.WaitGroup) {
 		time.Sleep(1 * time.Second)
 		err := l.Stop()
 		if err != nil {
-			fmt.Printf("Error stopping listener %s: %v\n", l.ID, err)
+			fmt.Printf("Error stopping listener %s: %v\n", l.GetID(), err)
 		}
 	}
 

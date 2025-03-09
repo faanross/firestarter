@@ -20,20 +20,25 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
-	listenerFactory := factory.NewListenerFactory()
-	// Keep track of created listeners
-	var listeners []*factory.Listener
+	// Create the abstract factory
+	listenerFactory := factory.NewAbstractFactory()
 
-	// create wait group to ensure thread sync
+	// Keep track of created listeners
+	var listeners []factory.Listener
+
+	// Create wait group to ensure thread sync
 	var wg sync.WaitGroup
 
 	for _, port := range serverPorts {
 		time.Sleep(1 * time.Second)
-		l, err := listenerFactory.CreateListener(port)
+
+		// Create a listener using the abstract factory
+		l, err := listenerFactory.CreateH1CListener(port)
 		if err != nil {
 			fmt.Printf("Error creating service: %v\n", err)
 			continue
 		}
+
 		// Store the listener
 		listeners = append(listeners, l)
 		time.Sleep(1 * time.Second)
@@ -41,12 +46,12 @@ func main() {
 		// Increment WaitGroup counter BEFORE starting the goroutine
 		wg.Add(1)
 
-		go func(l *factory.Listener) {
+		go func(l factory.Listener) {
 			// Defer the Done() call so it happens even if there's an error
 			defer wg.Done()
 			err := l.Start()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				fmt.Printf("Error starting listener %s: %v\n", l.ID, err)
+				fmt.Printf("Error starting listener %s: %v\n", l.GetID(), err)
 			}
 		}(l)
 	}
@@ -56,6 +61,7 @@ func main() {
 	// Block until we receive a termination signal
 	sig := <-signalChan
 	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
-	control.StopAllListeners(listeners, &wg)
 
+	// Stop all listeners
+	control.StopAllListeners(listeners, &wg)
 }
