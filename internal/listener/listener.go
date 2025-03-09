@@ -16,16 +16,29 @@ type ConcreteListener struct {
 	Protocol types.ProtocolType
 	Router   *chi.Mux
 	server   *http.Server
+	handler  http.Handler
 }
 
+// SetHandler sets a custom handler
+func (l *ConcreteListener) SetHandler(handler http.Handler) {
+	l.handler = handler
+}
+
+// Start will run the configured listener
 func (l *ConcreteListener) Start() error {
 	addr := fmt.Sprintf(":%s", l.Port)
 	fmt.Printf("|START| Listener %s serving on %s\n", l.ID, addr)
 
 	// Create the server instance
 	l.server = &http.Server{
-		Addr:    addr,
-		Handler: l.Router,
+		Addr: addr,
+		// Use the custom handler if set, otherwise use the router
+		Handler: func() http.Handler {
+			if l.handler != nil {
+				return l.handler
+			}
+			return l.Router
+		}(),
 	}
 
 	return l.server.ListenAndServe()
@@ -77,12 +90,13 @@ func (l *ConcreteListener) GetID() string {
 	return l.ID
 }
 
-// NewConcreteListener creates a new concrete listener with the specified parameters
-func NewConcreteListener(id string, port string, protocol types.ProtocolType, router *chi.Mux) types.Listener {
+// Update the NewConcreteListener function
+func NewConcreteListener(id string, port string, protocol types.ProtocolType, router *chi.Mux) *ConcreteListener {
 	return &ConcreteListener{
 		ID:       id,
 		Port:     port,
 		Protocol: protocol,
 		Router:   router,
+		handler:  nil, // Default to nil
 	}
 }
