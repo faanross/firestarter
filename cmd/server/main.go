@@ -1,12 +1,12 @@
+// cmd/server/main.go
 package main
 
 import (
-	"errors"
-	"firestarter/internal/control"
 	"firestarter/internal/factory"
+	"firestarter/internal/manager"
+	"firestarter/internal/service"
 	"firestarter/internal/types"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -29,49 +29,40 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
-	// Create the abstract factory
-	listenerFactory := factory.NewAbstractFactory()
+	// Create the components
+	abstractFactory := factory.NewAbstractFactory()
+	listenerManager := manager.NewListenerManager()
+	listenerService := service.NewListenerService(abstractFactory, listenerManager)
 
-	// Keep track of created listeners
-	var listeners []types.Listener
-
-	// Create wait group to ensure thread sync
+	// Wait group for synchronization
 	var wg sync.WaitGroup
 
 	// Create and start listeners based on configurations
 	for _, config := range listenerConfigs {
 		time.Sleep(1 * time.Second)
 
-		// Create a listener using the abstract factory
-		l, err := listenerFactory.CreateListener(config.Protocol, config.Port)
+		// Use the service to create and start the listener
+		_, err := listenerService.CreateAndStartListener(
+			config.Protocol,
+			config.Port,
+			&wg,
+		)
+
 		if err != nil {
-			fmt.Printf("Error creating service: %v\n", err)
+			fmt.Printf("Error creating and starting listener: %v\n", err)
 			continue
 		}
-		
-		// Store the listener
-		listeners = append(listeners, l)
-		time.Sleep(1 * time.Second)
 
-		// Increment WaitGroup counter before starting the goroutine
-		wg.Add(1)
-
-		go func(l types.Listener) {
-			// Defer the Done() call so it happens even if there's an error
-			defer wg.Done()
-			err := l.Start()
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				fmt.Printf("Error starting listener %s: %v\n", l.GetID(), err)
-			}
-		}(l)
 	}
 
 	time.Sleep(2 * time.Second)
+	fmt.Printf("Managing %d active listeners.\n",
+		listenerManager.Count())
 
 	// Block until we receive a termination signal
 	sig := <-signalChan
 	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
 
-	// Stop all listeners
-	control.StopAllListeners(listeners, &wg)
+	// Use the service to stop all listeners
+	listenerService.StopAllListeners(&wg)
 }
