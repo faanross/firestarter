@@ -1,14 +1,14 @@
 package control
 
 import (
-	"firestarter/internal/factory"
+	"firestarter/internal/types"
 	"fmt"
 	"sync"
 	"time"
 )
 
 // StopAllListeners gracefully shuts down all active listeners
-func StopAllListeners(listeners []factory.Listener, wg *sync.WaitGroup) {
+func StopAllListeners(listeners []types.Listener, wg *sync.WaitGroup) {
 	fmt.Println("Shutting down listeners...")
 
 	// Gracefully stop each listener

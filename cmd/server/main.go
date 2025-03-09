@@ -4,6 +4,7 @@ import (
 	"errors"
 	"firestarter/internal/control"
 	"firestarter/internal/factory"
+	"firestarter/internal/types"
 	"fmt"
 	"net/http"
 	"os"
@@ -24,7 +25,7 @@ func main() {
 	listenerFactory := factory.NewAbstractFactory()
 
 	// Keep track of created listeners
-	var listeners []factory.Listener
+	var listeners []types.Listener
 
 	// Create wait group to ensure thread sync
 	var wg sync.WaitGroup
@@ -46,7 +47,7 @@ func main() {
 		// Increment WaitGroup counter BEFORE starting the goroutine
 		wg.Add(1)
 
-		go func(l factory.Listener) {
+		go func(l types.Listener) {
 			// Defer the Done() call so it happens even if there's an error
 			defer wg.Done()
 			err := l.Start()

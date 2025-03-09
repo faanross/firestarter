@@ -1,7 +1,8 @@
-package factory
+package listener
 
 import (
 	"context"
+	"firestarter/internal/types"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 type ConcreteListener struct {
 	ID       string
 	Port     string
-	Protocol ProtocolType
+	Protocol types.ProtocolType
 	Router   *chi.Mux
 	server   *http.Server
 }
@@ -53,10 +54,16 @@ func (l *ConcreteListener) Stop() error {
 
 func (l *ConcreteListener) GetProtocol() string {
 	switch l.Protocol {
-	case H1C:
+	case types.H1C:
 		return "HTTP/1.1"
-	case H2C:
+	case types.H1TLS:
+		return "HTTP/1.1 (TLS)"
+	case types.H2C:
 		return "HTTP/2"
+	case types.H2TLS:
+		return "HTTP/2 (TLS)"
+	case types.H3:
+		return "HTTP/3"
 	default:
 		return "Unknown"
 	}
@@ -68,4 +75,14 @@ func (l *ConcreteListener) GetPort() string {
 
 func (l *ConcreteListener) GetID() string {
 	return l.ID
+}
+
+// NewConcreteListener creates a new concrete listener with the specified parameters
+func NewConcreteListener(id string, port string, protocol types.ProtocolType, router *chi.Mux) types.Listener {
+	return &ConcreteListener{
+		ID:       id,
+		Port:     port,
+		Protocol: protocol,
+		Router:   router,
+	}
 }

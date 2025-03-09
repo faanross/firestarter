@@ -1,28 +1,33 @@
 package factory
 
 import (
+	"firestarter/internal/protocols/h1c"
+	"firestarter/internal/types"
 	"fmt"
 	"math/rand"
 )
 
 // AbstractFactory decides which protocol-specific factory to use
 type AbstractFactory struct {
-	factories map[ProtocolType]ListenerFactory
+	factories map[types.ProtocolType]types.ListenerFactory
 }
 
 // NewAbstractFactory creates a new AbstractFactory with all registered protocol factories
 func NewAbstractFactory() *AbstractFactory {
 	return &AbstractFactory{
-		factories: map[ProtocolType]ListenerFactory{
-			H1C: &H1CFactory{},
-			// Add other protocol factories as they are implemented
-			// H2C: &H2CFactory{},
+		factories: map[types.ProtocolType]types.ListenerFactory{
+			types.H1C: &h1c.Factory{},
+			// Other protocols will be added here as they are implemented
+			// types.H1TLS: &h1tls.Factory{},
+			// types.H2C: &h2c.Factory{},
+			// types.H2TLS: &h2tls.Factory{},
+			// types.H3: &h3.Factory{},
 		},
 	}
 }
 
 // CreateListener creates a listener with the specified protocol type
-func (af *AbstractFactory) CreateListener(protocol ProtocolType, port string) (Listener, error) {
+func (af *AbstractFactory) CreateListener(protocol types.ProtocolType, port string) (types.Listener, error) {
 	factory, ok := af.factories[protocol]
 	if !ok {
 		return nil, fmt.Errorf("unsupported protocol: %v", protocol)
@@ -34,7 +39,7 @@ func (af *AbstractFactory) CreateListener(protocol ProtocolType, port string) (L
 	return factory.CreateListener(id, port)
 }
 
-// CreateH1CListener is a convenience method for creating H1C listeners
-func (af *AbstractFactory) CreateH1CListener(port string) (Listener, error) {
-	return af.CreateListener(H1C, port)
+// Convenience methods for creating specific protocol listeners
+func (af *AbstractFactory) CreateH1CListener(port string) (types.Listener, error) {
+	return af.CreateListener(types.H1C, port)
 }
