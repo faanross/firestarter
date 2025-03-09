@@ -6,9 +6,9 @@
     <thead>
     <tr>
       <th>Start</th>
-      <th>Duration</th>
       <th>ID</th>
       <th>Port</th>
+      <th>Protocol</th>
     </tr>
     </thead>
     <tbody>
