@@ -16,3 +16,4 @@
 
 ### Graceful shutdown
 - use context + sig term to ensure shutting down server gracefully exits all listeners
+- also integrate wait group into listener start goroutines to ensure proper synchronization during shutdown

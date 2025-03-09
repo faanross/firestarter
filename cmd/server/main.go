@@ -26,7 +26,7 @@ func main() {
 
 	// create wait group to ensure thread sync
 	var wg sync.WaitGroup
-	
+
 	for _, port := range serverPorts {
 		time.Sleep(1 * time.Second)
 		l, err := listenerFactory.CreateListener(port)
@@ -36,9 +36,14 @@ func main() {
 		}
 		// Store the listener
 		listeners = append(listeners, l)
-
 		time.Sleep(1 * time.Second)
+
+		// Increment WaitGroup counter BEFORE starting the goroutine
+		wg.Add(1)
+
 		go func(l *factory.Listener) {
+			// Defer the Done() call so it happens even if there's an error
+			defer wg.Done()
 			err := l.Start()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				fmt.Printf("Error starting listener %s: %v\n", l.ID, err)
@@ -51,6 +56,6 @@ func main() {
 	// Block until we receive a termination signal
 	sig := <-signalChan
 	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
-	control.StopAllListeners(listeners)
+	control.StopAllListeners(listeners, &wg)
 
 }

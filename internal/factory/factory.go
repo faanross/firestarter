@@ -10,10 +10,8 @@ import (
 	"time"
 )
 
-type ListenerFactory struct{}
-
-func NewListenerFactory() *ListenerFactory {
-	return &ListenerFactory{}
+type ListenerFactory interface {
+	CreateListener(id string, port string) (Listener, error)
 }
 
 // Listener represents an HTTP server instance
@@ -75,4 +73,21 @@ func (l *Listener) Stop() error {
 
 	fmt.Printf("|STOP| Listener %s on port %s shut down successfully\n", l.ID, l.Port)
 	return nil
+}
+
+type ProtocolType int
+
+const (
+	H1C ProtocolType = iota + 1
+	//H1TLS
+	H2C
+	//H2TLS
+	//H3
+)
+
+type Listeners interface {
+	Start() error
+	Stop() error
+	GetProtocol() string
+	GetPort() int
 }
