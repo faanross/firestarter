@@ -39,12 +39,3 @@ func (af *AbstractFactory) CreateListener(protocol types.ProtocolType, port stri
 
 	return factory.CreateListener(id, port)
 }
-
-// Convenience methods for creating specific protocol listeners
-func (af *AbstractFactory) CreateH1CListener(port string) (types.Listener, error) {
-	return af.CreateListener(types.H1C, port)
-}
-
-func (af *AbstractFactory) CreateH2CListener(port string) (types.Listener, error) {
-	return af.CreateListener(types.H2C, port)
-}
