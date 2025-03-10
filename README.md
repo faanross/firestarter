@@ -30,4 +30,15 @@
 
 ### Frontend
 - Add basic web ui frontend, not-integrated
-- Add websocket component in server + 
+- Add websocket component in server + frontend, can connect
+
+### ListenerTable Update
+- Once listener is created, server sends single event update to UI, updating table
+- However no persistence yet, ie if we refresh websocket connection table empties
+- Create "snapshot" method to solve this
+- Whenever UI connects to server, server immediately send list of all active listeners
+- This achieves persistence
+
+### Implement UI -> Server control
+- Add `command` structure, allows frontend to send commands to server
+- Add a `Stop` button in Listeners table, we can now stop individual listeners from UI
