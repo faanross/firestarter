@@ -38,3 +38,9 @@ func ConvertListener(listener types.Listener) ListenerInfo {
 		CreatedAt: listener.GetCreatedAt(),
 	}
 }
+
+// Command represents a request from client to server
+type Command struct {
+	Action  string      `json:"action"`  // What action to perform (e.g., "stop_listener")
+	Payload interface{} `json:"payload"` // Parameters for the action
+}
