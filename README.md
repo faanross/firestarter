@@ -1,21 +1,21 @@
-## devlog overview
-### set-up basic listener, router, handler
-- implement HTTP/1.1 clear listener
-- implement Chi router 
-- implement simple route 
-- implement simple handler 
+## DEVLOG OVERVIEW
+### Set-up Basic Listener, Router, Handler
+- Implement HTTP/1.1 clear listener
+- Implement Chi router 
+- Implement simple route 
+- Implement simple handler 
 
-### implement listener factory
-- capable of producing multiple listeners
+### Implement Listener Factory
+- Capable of producing multiple listeners
 
 ### Implement Stop()
-- add a `listeners` slice pointer to keep track of all listeners 
-- add a Stop() method to listener to give us ability to intentionally shut down listener
+- Add a `listeners` slice pointer to keep track of all listeners 
+- Add a Stop() method to listener to give us ability to intentionally shut down listener
 - `listeners` can be iterated through to shut down all listeners
 
-### Graceful shutdown
-- use context + sig term to ensure shutting down server gracefully exits all listeners
-- also integrate wait group into listener start goroutines to ensure proper synchronization during shutdown
+### Graceful Shutdown
+- Use context + sig term to ensure shutting down server gracefully exits all listeners
+- Also integrate wait group into listener start goroutines to ensure proper synchronization during shutdown
 
 ### Implement Abstract Factory + H2C
 - Create ability for more protocols in a generic manner using abstract factory
