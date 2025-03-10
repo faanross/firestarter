@@ -70,7 +70,8 @@ const processMessage = (event) => {
         break;
 
       case 'listeners_snapshot':
-        // Replace entire list with snapshot (will implement in Phase 2)
+        // Replace entire list with snapshot data
+        handleSnapshot(message.payload);
         break;
 
       default:
@@ -79,6 +80,14 @@ const processMessage = (event) => {
   } catch (error) {
     console.error('Error processing WebSocket message:', error);
   }
+};
+
+// Process "snapshot" - list of all active listeners
+const handleSnapshot = (listenersData) => {
+  console.log('Received listeners snapshot with', listenersData.length, 'listeners');
+
+  // Replace the entire listeners array with the snapshot data
+  listeners.value = listenersData;
 };
 
 // Add a listener to the list
@@ -95,10 +104,22 @@ const removeListener = (id) => {
   listeners.value = listeners.value.filter(listener => listener.id !== id);
 };
 
-// Placeholder for the stop function (we'll implement this in Phase 2)
+// Stop a listener by sending a command to the server
 const stopListener = (id) => {
-  console.log('Stop listener requested for:', id);
-  // TODO: Send stop request to server
+  console.log('Requesting to stop listener:', id);
+
+  if (!props.socket || props.socket.readyState !== WebSocket.OPEN) {
+    console.error('Cannot stop listener: WebSocket not connected');
+    return;
+  }
+
+  // Create and send the stop command
+  const stopCommand = {
+    action: 'stop_listener',
+    payload: { id }
+  };
+
+  props.socket.send(JSON.stringify(stopCommand));
 };
 
 // Add message listener when socket becomes available
@@ -115,6 +136,37 @@ onUnmounted(() => {
     props.socket.removeEventListener('message', processMessage);
   }
 });
+
+// Request a snapshot of all listeners from the server
+const requestSnapshot = () => {
+  console.log('Requesting listeners snapshot');
+
+  if (!props.socket || props.socket.readyState !== WebSocket.OPEN) {
+    console.error('Cannot request snapshot: WebSocket not connected');
+    return;
+  }
+
+  // Create and send the get_listeners command
+  const getCommand = {
+    action: 'get_listeners',
+    payload: {}
+  };
+
+  props.socket.send(JSON.stringify(getCommand));
+};
+
+// And update the watch function to request a snapshot when the socket connects:
+watch(() => props.socket, (newSocket) => {
+  if (newSocket) {
+    console.log('Socket connected in ListenersTable');
+    newSocket.addEventListener('message', processMessage);
+
+    // Request a snapshot when the socket connects
+    // (This is a backup in case the automatic snapshot on connection fails)
+    setTimeout(requestSnapshot, 500);
+  }
+}, { immediate: true });
+
 </script>
 
 <style>

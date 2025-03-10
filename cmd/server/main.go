@@ -40,6 +40,9 @@ func main() {
 	listenerManager := manager.NewListenerManager()
 	listenerService := service.NewListenerService(abstractFactory, listenerManager)
 
+	// ConnectToWebSocket allows our service and websocket to communicate with one another
+	listenerService.ConnectToWebSocket()
+
 	// Wait group for synchronization
 	var wg sync.WaitGroup
 
