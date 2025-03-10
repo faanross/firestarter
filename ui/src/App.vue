@@ -2,17 +2,21 @@
   <div class="container">
     <h1>firestarterC2</h1>
 
-    <WebSocketConnection/>
-    <ListenersTable/>
+    <WebSocketConnection @socket-ready="handleSocketReady" />
+    <ListenersTable :socket="sharedSocket" />
   </div>
 </template>
 
 <script setup>
-
+import { ref } from 'vue';
 import ListenersTable from './components/ListenersTable.vue';
 import WebSocketConnection from './components/WebSocketConnection.vue';
 
+const sharedSocket = ref(null);
 
+const handleSocketReady = (socket) => {
+  sharedSocket.value = socket;
+};
 </script>
 
 <style>
@@ -26,5 +30,4 @@ h1 {
   text-align: center;
   margin-bottom: 30px;
 }
-
 </style>

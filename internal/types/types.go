@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/go-chi/chi/v5"
+	"time"
 )
 
 // ProtocolType defines the supported protocol types
@@ -22,6 +23,7 @@ type Listener interface {
 	GetProtocol() string
 	GetPort() string
 	GetID() string
+	GetCreatedAt() time.Time
 }
 
 // ListenerFactory interface defines methods for creating listeners

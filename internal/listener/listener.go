@@ -11,12 +11,18 @@ import (
 
 // ConcreteListener represents an HTTP server instance
 type ConcreteListener struct {
-	ID       string
-	Port     string
-	Protocol types.ProtocolType
-	Router   *chi.Mux
-	server   *http.Server
-	handler  http.Handler
+	ID        string
+	Port      string
+	Protocol  types.ProtocolType
+	Router    *chi.Mux
+	CreatedAt time.Time
+	server    *http.Server
+	handler   http.Handler
+}
+
+// GetCreatedAt returns time when listener was created
+func (l *ConcreteListener) GetCreatedAt() time.Time {
+	return l.CreatedAt
 }
 
 // SetHandler sets a custom handler
@@ -94,10 +100,11 @@ func (l *ConcreteListener) GetID() string {
 // NewConcreteListener constructs ConcreteListener struct
 func NewConcreteListener(id string, port string, protocol types.ProtocolType, router *chi.Mux) *ConcreteListener {
 	return &ConcreteListener{
-		ID:       id,
-		Port:     port,
-		Protocol: protocol,
-		Router:   router,
-		handler:  nil, // Default to nil
+		ID:        id,
+		Port:      port,
+		Protocol:  protocol,
+		Router:    router,
+		CreatedAt: time.Now(),
+		handler:   nil,
 	}
 }

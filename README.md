@@ -27,3 +27,7 @@
 - For example creates a centralized method to config, add to manager, start a listener
 - Or, stop a listener, remove from manager
 - This is going to be very important once we get to frontend implementation to provide "snapshot method"
+
+### Frontend
+- Add basic web ui frontend, not-integrated
+- Add websocket component in server + 

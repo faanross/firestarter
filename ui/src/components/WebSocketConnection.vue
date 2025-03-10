@@ -8,7 +8,9 @@
 </template>
 
 <script setup>
-import {ref, onMounted, onUnmounted} from 'vue';
+import { ref, onMounted, onUnmounted, defineEmits } from 'vue';
+
+const emits = defineEmits(['socket-ready']);
 
 // WebSocket connection
 const socket = ref(null);
@@ -31,6 +33,10 @@ const connectWebSocket = () => {
     console.log('Connected to WebSocket server');
     isConnected.value = true;
     connectionStatus.value = 'Connected';
+
+    // Emit the socket to parent component
+    emits('socket-ready', socket.value);
+
     // Send a message to the server
     socket.value.send('Hello from Vue client!');
   });
