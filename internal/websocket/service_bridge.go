@@ -1,11 +1,16 @@
 package websocket
 
-import "firestarter/internal/types"
+import (
+	"firestarter/internal/interfaces"
+	"firestarter/internal/types"
+)
 
 // ServiceBridge defines the interface for accessing listener service functionality
 type ServiceBridge interface {
 	GetAllListeners() []types.Listener
 	StopListener(id string) error
+	GetAllConnections() []interfaces.Connection
+	GetConnectionCount() int
 }
 
 // Global service bridge instance

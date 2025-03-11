@@ -1,6 +1,8 @@
 package factory
 
 import (
+	"firestarter/internal/connections"
+	"firestarter/internal/interfaces"
 	"firestarter/internal/protocols/h1c"
 	"firestarter/internal/protocols/h2c"
 	"firestarter/internal/types"
@@ -10,25 +12,24 @@ import (
 
 // AbstractFactory decides which protocol-specific factory to use
 type AbstractFactory struct {
-	factories map[types.ProtocolType]types.ListenerFactory
+	factories   map[interfaces.ProtocolType]types.ListenerFactory
+	connManager *connections.ConnectionManager // Add this field
 }
 
 // NewAbstractFactory creates a new AbstractFactory with all registered protocol factories
-func NewAbstractFactory() *AbstractFactory {
+func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFactory {
 	return &AbstractFactory{
-		factories: map[types.ProtocolType]types.ListenerFactory{
-			types.H1C: &h1c.Factory{},
-			types.H2C: &h2c.Factory{},
+		factories: map[interfaces.ProtocolType]types.ListenerFactory{
+			interfaces.H1C: &h1c.Factory{},
+			interfaces.H2C: &h2c.Factory{},
 			// Other protocols will be added here as they are implemented
-			// types.H1TLS: &h1tls.Factory{},
-			// types.H2TLS: &h2tls.Factory{},
-			// types.H3: &h3.Factory{},
 		},
+		connManager: connManager,
 	}
 }
 
 // CreateListener creates a listener with the specified protocol type
-func (af *AbstractFactory) CreateListener(protocol types.ProtocolType, port string) (types.Listener, error) {
+func (af *AbstractFactory) CreateListener(protocol interfaces.ProtocolType, port string) (types.Listener, error) {
 	factory, ok := af.factories[protocol]
 	if !ok {
 		return nil, fmt.Errorf("unsupported protocol: %v", protocol)
@@ -37,5 +38,6 @@ func (af *AbstractFactory) CreateListener(protocol types.ProtocolType, port stri
 	// Generate a random ID
 	id := fmt.Sprintf("listener_%06d", rand.Intn(1000000))
 
-	return factory.CreateListener(id, port)
+	// Pass the connection manager along with other parameters
+	return factory.CreateListener(id, port, af.connManager)
 }

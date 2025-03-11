@@ -1,6 +1,7 @@
 package h2c
 
 import (
+	"firestarter/internal/interfaces"
 	"firestarter/internal/listener"
 	"firestarter/internal/router"
 	"firestarter/internal/types"
@@ -13,8 +14,7 @@ import (
 // Factory creates HTTP/2 cleartext listeners
 type Factory struct{}
 
-func (f *Factory) CreateListener(id string, port string) (types.Listener, error) {
-
+func (f *Factory) CreateListener(id string, port string, connManager interfaces.ConnectionManager) (types.Listener, error) {
 	// Create a router and set up routes
 	r := chi.NewRouter()
 	router.SetupRoutes(r)
@@ -29,7 +29,7 @@ func (f *Factory) CreateListener(id string, port string) (types.Listener, error)
 	fmt.Printf("|CREATE| HTTP/2 Listener %s configured on port %s\n", id, port)
 
 	// Create a concrete listener with the H2C protocol type
-	concreteListener := listener.NewConcreteListener(id, port, types.H2C, r)
+	concreteListener := listener.NewConcreteListener(id, port, interfaces.H2C, r, connManager)
 
 	// Set the H2C handler to be used when starting the server
 	concreteListener.SetHandler(h2cHandler)

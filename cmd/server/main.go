@@ -3,10 +3,11 @@ package main
 
 import (
 	"bufio"
+	"firestarter/internal/connections"
 	"firestarter/internal/factory"
+	"firestarter/internal/interfaces"
 	"firestarter/internal/manager"
 	"firestarter/internal/service"
-	"firestarter/internal/types"
 	"firestarter/internal/websocket"
 	"fmt"
 	"os"
@@ -19,11 +20,11 @@ import (
 // Define port and protocol configurations
 var listenerConfigs = []struct {
 	Port     string
-	Protocol types.ProtocolType
+	Protocol interfaces.ProtocolType
 }{
-	{"7777", types.H1C}, // HTTP/1.1 on port 7777
-	{"8888", types.H2C}, // HTTP/2 on port 8888
-	{"9999", types.H2C}, // HTTP/2 on port 9999
+	{"7777", interfaces.H1C}, // HTTP/1.1 on port 7777
+	{"8888", interfaces.H2C}, // HTTP/2 on port 8888
+	{"9999", interfaces.H2C}, // HTTP/2 on port 9999
 }
 
 func main() {
@@ -36,9 +37,10 @@ func main() {
 	time.Sleep(5 * time.Second)
 
 	// Create the components
-	abstractFactory := factory.NewAbstractFactory()
+	connectionManager := connections.NewConnectionManager()
+	abstractFactory := factory.NewAbstractFactory(connectionManager)
 	listenerManager := manager.NewListenerManager()
-	listenerService := service.NewListenerService(abstractFactory, listenerManager)
+	listenerService := service.NewListenerService(abstractFactory, listenerManager, connectionManager)
 
 	// ConnectToWebSocket allows our service and websocket to communicate with one another
 	listenerService.ConnectToWebSocket()
@@ -70,6 +72,9 @@ func main() {
 	fmt.Printf("Managing %d active listeners.\n",
 		listenerManager.Count())
 
+	// Add connection tracking test
+	TestConnectionTracking(listenerService)
+
 	// Block until we receive a termination signal
 	sig := <-signalChan
 	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
@@ -88,4 +93,29 @@ func PressAnyKey() {
 
 	// Optional: Clean any leftover newline characters
 	fmt.Println() // Add a newline after input for cleaner output
+}
+
+// TestConnectionTracking performs manual verification of connection tracking
+func TestConnectionTracking(listenerService *service.ListenerService) {
+	// Print initial status
+	fmt.Println("\n==== CONNECTION TRACKING TEST ====")
+	fmt.Println("Initial state (should be 0 connections):")
+	listenerService.LogConnectionStatus()
+
+	// Start a monitoring goroutine
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			count := listenerService.GetConnectionCount()
+			fmt.Printf("\n[%s] Connection monitor: %d active connections\n",
+				time.Now().Format(time.RFC3339), count)
+			if count > 0 {
+				listenerService.LogConnectionStatus()
+			}
+		}
+	}()
+
+	fmt.Println("\nConnection tracking test initialized.")
+	fmt.Println("Please make HTTP requests to test endpoints to verify tracking.")
+	fmt.Println("====================================")
 }

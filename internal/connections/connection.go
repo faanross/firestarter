@@ -2,7 +2,7 @@ package connections
 
 import (
 	"encoding/hex"
-	"firestarter/internal/types"
+	"firestarter/internal/interfaces"
 	"fmt"
 	"time"
 )
@@ -10,7 +10,7 @@ import (
 // Connection interface defines what all protocol-specific connections must implement
 type Connection interface {
 	GetID() string
-	GetProtocol() types.ProtocolType
+	GetProtocol() interfaces.ProtocolType
 	GetCreatedAt() time.Time
 	GetPort() string
 	Close() error
@@ -19,7 +19,7 @@ type Connection interface {
 // BaseConnection provides common fields and functionality for all connection types
 type BaseConnection struct {
 	ID        string
-	Protocol  types.ProtocolType
+	Protocol  interfaces.ProtocolType
 	Port      string
 	CreatedAt time.Time
 }

@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"firestarter/internal/interfaces"
 	"firestarter/internal/types"
 	"time"
 )
@@ -17,10 +18,10 @@ const (
 
 // ListenerInfo represents the data about a listener that will be sent to clients
 type ListenerInfo struct {
-	ID        string    `json:"id"`
-	Port      string    `json:"port"`
-	Protocol  string    `json:"protocol"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        string                  `json:"id"`
+	Port      string                  `json:"port"`
+	Protocol  interfaces.ProtocolType `json:"protocol"`
+	CreatedAt time.Time               `json:"createdAt"`
 }
 
 // Message is the standard format for all WebSocket messages

@@ -2,22 +2,24 @@ package listener
 
 import (
 	"context"
-	"firestarter/internal/types"
+	"firestarter/internal/interfaces"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"net"
 	"net/http"
 	"time"
 )
 
 // ConcreteListener represents an HTTP server instance
 type ConcreteListener struct {
-	ID        string
-	Port      string
-	Protocol  types.ProtocolType
-	Router    *chi.Mux
-	CreatedAt time.Time
-	server    *http.Server
-	handler   http.Handler
+	ID          string
+	Port        string
+	Protocol    interfaces.ProtocolType
+	Router      *chi.Mux
+	CreatedAt   time.Time
+	server      *http.Server
+	handler     http.Handler
+	connManager interfaces.ConnectionManager
 }
 
 // GetCreatedAt returns time when listener was created
@@ -36,6 +38,15 @@ func (l *ConcreteListener) Start() error {
 
 	fmt.Printf("|START| %s Listener %s serving on %s\n", l.GetProtocol(), l.ID, addr)
 
+	// Create a standard TCP listener
+	tcpListener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("failed to create TCP listener: %v", err)
+	}
+
+	// Wrap with our connection tracking listener
+	trackingListener := NewConnectionTrackingListener(tcpListener, l.connManager, l.Protocol)
+
 	// Create the server instance
 	l.server = &http.Server{
 		Addr: addr,
@@ -48,7 +59,8 @@ func (l *ConcreteListener) Start() error {
 		}(),
 	}
 
-	return l.server.ListenAndServe()
+	// Use Serve instead of ListenAndServe to use our custom listener
+	return l.server.Serve(trackingListener)
 }
 
 func (l *ConcreteListener) Stop() error {
@@ -72,20 +84,20 @@ func (l *ConcreteListener) Stop() error {
 	return nil
 }
 
-func (l *ConcreteListener) GetProtocol() string {
+func (l *ConcreteListener) GetProtocol() interfaces.ProtocolType {
 	switch l.Protocol {
-	case types.H1C:
-		return "HTTP/1.1"
-	case types.H1TLS:
-		return "HTTP/1.1 (TLS)"
-	case types.H2C:
-		return "HTTP/2"
-	case types.H2TLS:
-		return "HTTP/2 (TLS)"
-	case types.H3:
-		return "HTTP/3"
+	case interfaces.H1C:
+		return interfaces.H1C
+	case interfaces.H1TLS:
+		return interfaces.H1TLS
+	case interfaces.H2C:
+		return interfaces.H2C
+	case interfaces.H2TLS:
+		return interfaces.H2TLS
+	case interfaces.H3:
+		return interfaces.H3
 	default:
-		return "Unknown"
+		return interfaces.H3
 	}
 }
 
@@ -98,13 +110,14 @@ func (l *ConcreteListener) GetID() string {
 }
 
 // NewConcreteListener constructs ConcreteListener struct
-func NewConcreteListener(id string, port string, protocol types.ProtocolType, router *chi.Mux) *ConcreteListener {
+func NewConcreteListener(id string, port string, protocol interfaces.ProtocolType, router *chi.Mux, connManager interfaces.ConnectionManager) *ConcreteListener {
 	return &ConcreteListener{
-		ID:        id,
-		Port:      port,
-		Protocol:  protocol,
-		Router:    router,
-		CreatedAt: time.Now(),
-		handler:   nil,
+		ID:          id,
+		Port:        port,
+		Protocol:    protocol,
+		Router:      router,
+		CreatedAt:   time.Now(),
+		handler:     nil,
+		connManager: connManager,
 	}
 }

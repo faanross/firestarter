@@ -2,30 +2,35 @@
 package service
 
 import (
+	"firestarter/internal/connections"
 	"firestarter/internal/factory"
+	"firestarter/internal/interfaces"
 	"firestarter/internal/manager"
 	"firestarter/internal/types"
 	"firestarter/internal/websocket"
 	"fmt"
 	"sync"
+	"time"
 )
 
 // ListenerService coordinates listener lifecycle operations
 type ListenerService struct {
-	factory *factory.AbstractFactory
-	manager *manager.ListenerManager
+	factory     *factory.AbstractFactory
+	manager     *manager.ListenerManager
+	connManager *connections.ConnectionManager
 }
 
 // NewListenerService creates a new listener service
-func NewListenerService(factory *factory.AbstractFactory, manager *manager.ListenerManager) *ListenerService {
+func NewListenerService(factory *factory.AbstractFactory, manager *manager.ListenerManager, connManager *connections.ConnectionManager) *ListenerService {
 	return &ListenerService{
-		factory: factory,
-		manager: manager,
+		factory:     factory,
+		manager:     manager,
+		connManager: connManager,
 	}
 }
 
 // CreateAndStartListener creates a listener, registers it with the manager, and starts it
-func (s *ListenerService) CreateAndStartListener(protocol types.ProtocolType, port string, wg *sync.WaitGroup) (types.Listener, error) {
+func (s *ListenerService) CreateAndStartListener(protocol interfaces.ProtocolType, port string, wg *sync.WaitGroup) (types.Listener, error) {
 	// Create the listener
 	listener, err := s.factory.CreateListener(protocol, port)
 	if err != nil {
@@ -143,4 +148,195 @@ func (s *ListenerService) GetAllListeners() []types.Listener {
 // GetManager returns the manager instance
 func (s *ListenerService) GetManager() *manager.ListenerManager {
 	return s.manager
+}
+
+// GetConnectionManager is the getter for our connection manager
+func (s *ListenerService) GetConnectionManager() *connections.ConnectionManager {
+	return s.connManager
+}
+
+// Change this function signature
+func (s *ListenerService) GetAllConnections() []interfaces.Connection {
+	return s.connManager.GetAllConnections()
+}
+
+// GetConnectionsByProtocol returns connections filtered by protocol
+func (s *ListenerService) GetConnectionsByProtocol(protocol interfaces.ProtocolType) []connections.Connection {
+	allConnections := s.connManager.GetAllConnections()
+	filteredConnections := make([]connections.Connection, 0)
+
+	for _, conn := range allConnections {
+		if conn.GetProtocol() == protocol {
+			filteredConnections = append(filteredConnections, conn)
+		}
+	}
+
+	return filteredConnections
+}
+
+// GetConnectionCount returns the total number of active connections
+func (s *ListenerService) GetConnectionCount() int {
+	return s.connManager.Count()
+}
+
+// LogConnectionStatus prints comprehensive connection status information
+func (s *ListenerService) LogConnectionStatus() {
+	connections := s.connManager.GetAllConnections()
+	fmt.Printf("\n==== CONNECTION STATUS REPORT ====\n")
+	fmt.Printf("Total active connections: %d\n", len(connections))
+
+	// Group by protocol
+	protocolCounts := make(map[interfaces.ProtocolType]int)
+	for _, conn := range connections {
+		protocolCounts[conn.GetProtocol()]++
+	}
+
+	// Print counts by protocol with percentage
+	fmt.Println("\nBreakdown by protocol:")
+	for protocol, count := range protocolCounts {
+		percentage := float64(count) / float64(len(connections)) * 100
+		fmt.Printf("  - %s: %d connections (%.1f%%)\n",
+			getProtocolName(protocol), count, percentage)
+	}
+
+	// List a sample of connections
+	if len(connections) > 0 {
+		fmt.Println("\nSample connections:")
+		maxToShow := 3
+		shown := 0
+		for _, conn := range connections {
+			if shown >= maxToShow {
+				break
+			}
+			fmt.Printf("  - ID: %s, Protocol: %s, Created: %s\n",
+				conn.GetID(),
+				getProtocolName(conn.GetProtocol()),
+				conn.GetCreatedAt().Format(time.RFC3339))
+			shown++
+		}
+
+		if len(connections) > maxToShow {
+			fmt.Printf("  (and %d more...)\n", len(connections)-maxToShow)
+		}
+	}
+
+	fmt.Println("==================================\n")
+}
+
+// StartConnectionMonitor begins periodic monitoring of connection status
+func (s *ListenerService) StartConnectionMonitor(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	go func() {
+		for {
+			<-ticker.C
+			connectionCount := s.GetConnectionCount()
+			if connectionCount > 0 {
+				fmt.Printf("\n[%s] Connection monitor:\n", time.Now().Format(time.RFC3339))
+				s.LogConnectionStatus()
+			}
+		}
+	}()
+	fmt.Printf("Connection monitor started (interval: %s)\n", interval)
+}
+
+// Helper function to get protocol name
+func getProtocolName(protocol interfaces.ProtocolType) string {
+	switch protocol {
+	case interfaces.H1C:
+		return "HTTP/1.1"
+	case interfaces.H2C:
+		return "HTTP/2"
+	default:
+		return "Unknown"
+	}
+}
+
+// ConnectionStats represents statistics about the active connections
+type ConnectionStats struct {
+	TotalConnections      int
+	ConnectionsByProtocol map[interfaces.ProtocolType]int
+	OldestConnection      time.Time
+	NewestConnection      time.Time
+	AverageAgeSeconds     float64
+}
+
+// GetConnectionStats returns statistics about the current connections
+func (s *ListenerService) GetConnectionStats() ConnectionStats {
+	connections := s.connManager.GetAllConnections()
+	stats := ConnectionStats{
+		TotalConnections:      len(connections),
+		ConnectionsByProtocol: make(map[interfaces.ProtocolType]int),
+	}
+
+	if len(connections) == 0 {
+		return stats
+	}
+
+	// Initialize with first connection values
+	stats.OldestConnection = connections[0].GetCreatedAt()
+	stats.NewestConnection = connections[0].GetCreatedAt()
+
+	// Calculate total age for average
+	var totalAgeSeconds float64
+
+	for _, conn := range connections {
+		// Update protocol counts
+		stats.ConnectionsByProtocol[conn.GetProtocol()]++
+
+		// Check for oldest/newest
+		createdAt := conn.GetCreatedAt()
+		if createdAt.Before(stats.OldestConnection) {
+			stats.OldestConnection = createdAt
+		}
+		if createdAt.After(stats.NewestConnection) {
+			stats.NewestConnection = createdAt
+		}
+
+		// Add to total age
+		ageSeconds := time.Since(createdAt).Seconds()
+		totalAgeSeconds += ageSeconds
+	}
+
+	// Calculate average age
+	stats.AverageAgeSeconds = totalAgeSeconds / float64(len(connections))
+
+	return stats
+}
+
+// BroadcastConnectionStatus sends connection statistics to all WebSocket clients
+func (s *ListenerService) BroadcastConnectionStatus() {
+	wsServer := websocket.GetGlobalWSServer()
+	if wsServer == nil {
+		return
+	}
+
+	stats := s.GetConnectionStats()
+
+	// Create a simplified structure for the WebSocket message
+	type connectionStatusPayload struct {
+		TotalConnections  int            `json:"totalConnections"`
+		ByProtocol        map[string]int `json:"byProtocol"`
+		AverageAgeSeconds float64        `json:"averageAgeSeconds"`
+	}
+
+	// Convert protocol type keys to strings for JSON
+	byProtocolStr := make(map[string]int)
+	for proto, count := range stats.ConnectionsByProtocol {
+		byProtocolStr[getProtocolName(proto)] = count
+	}
+
+	payload := connectionStatusPayload{
+		TotalConnections:  stats.TotalConnections,
+		ByProtocol:        byProtocolStr,
+		AverageAgeSeconds: stats.AverageAgeSeconds,
+	}
+
+	// Define a new message type for connection status
+	const ConnectionStatus websocket.MessageType = "connection_status"
+
+	// Broadcast the message
+	wsServer.Broadcast(websocket.Message{
+		Type:    ConnectionStatus,
+		Payload: payload,
+	})
 }

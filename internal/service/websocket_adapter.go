@@ -1,6 +1,7 @@
 package service
 
 import (
+	"firestarter/internal/interfaces"
 	"firestarter/internal/types"
 	"firestarter/internal/websocket"
 )
@@ -27,4 +28,14 @@ func (a *websocketAdapter) GetAllListeners() []types.Listener {
 // StopListener implements ServiceBridge.StopListener
 func (a *websocketAdapter) StopListener(id string) error {
 	return a.service.StopListener(id)
+}
+
+// GetAllConnections implements ServiceBridge.GetAllConnections
+func (a *websocketAdapter) GetAllConnections() []interfaces.Connection {
+	return a.service.GetAllConnections()
+}
+
+// GetConnectionCount implements ServiceBridge.GetConnectionCount
+func (a *websocketAdapter) GetConnectionCount() int {
+	return a.service.GetConnectionCount()
 }
