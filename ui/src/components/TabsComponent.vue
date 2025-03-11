@@ -80,9 +80,10 @@ export default {
 }
 
 .tab-button.active {
-  background: #f0f0f0;
+  background: #50fa7b;
   border: 1px solid #ccc;
   border-bottom: none;
+  color: #2C2D30;
 }
 
 .tab-content {

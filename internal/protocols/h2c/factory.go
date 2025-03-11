@@ -23,7 +23,7 @@ func (f *Factory) CreateListener(id string, port string) (types.Listener, error)
 	h2s := &http2.Server{}
 
 	// Wrap the router with h2c handler
-	// This allows HTTP/2 connections over cleartext TCP
+	// This allows HTTP/2 connection over cleartext TCP
 	h2cHandler := h2c.NewHandler(r, h2s)
 
 	fmt.Printf("|CREATE| HTTP/2 Listener %s configured on port %s\n", id, port)

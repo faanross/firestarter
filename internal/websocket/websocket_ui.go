@@ -13,13 +13,13 @@ import (
 var WebSocketPort = 8080
 
 var upgrader = websocket.Upgrader{
-	// Allow connections from any origin for development
+	// Allow connection from any origin for development
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
 }
 
-// WebSocketServer represents a WebSocket server that manages client connections
+// WebSocketServer represents a WebSocket server that manages client connection
 type WebSocketServer struct {
 	port    int
 	clients map[*websocket.Conn]bool
@@ -55,7 +55,7 @@ func (s *WebSocketServer) Start() error {
 	return http.ListenAndServe(addr, nil)
 }
 
-// handleWebSocket handles WebSocket connections
+// handleWebSocket handles WebSocket connection
 func (s *WebSocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Upgrade HTTP connection to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
