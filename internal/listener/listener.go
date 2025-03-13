@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"crypto/tls"
 	"firestarter/internal/interfaces"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -20,6 +21,7 @@ type ConcreteListener struct {
 	server      *http.Server
 	handler     http.Handler
 	connManager interfaces.ConnectionManager
+	tlsConfig   *tls.Config
 }
 
 // GetCreatedAt returns time when listener was created
@@ -50,17 +52,22 @@ func (l *ConcreteListener) Start() error {
 	// Create the server instance
 	l.server = &http.Server{
 		Addr: addr,
-		// Use the custom handler if set, otherwise use the router
 		Handler: func() http.Handler {
 			if l.handler != nil {
 				return l.handler
 			}
 			return l.Router
 		}(),
+		TLSConfig: l.tlsConfig,
 	}
 
-	// Use Serve instead of ListenAndServe to use our custom listener
-	return l.server.Serve(trackingListener)
+	// If TLS is configured, use ServeTLS, otherwise use Serve
+	if l.tlsConfig != nil {
+		// Empty strings for cert and key files because we're providing the certificates in TLSConfig
+		return l.server.ServeTLS(trackingListener, "", "")
+	} else {
+		return l.server.Serve(trackingListener)
+	}
 }
 
 func (l *ConcreteListener) Stop() error {
@@ -120,4 +127,8 @@ func NewConcreteListener(id string, port string, protocol interfaces.ProtocolTyp
 		handler:     nil,
 		connManager: connManager,
 	}
+}
+
+func (l *ConcreteListener) SetTLSConfig(config *tls.Config) {
+	l.tlsConfig = config
 }
