@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"firestarter/internal/certificates"
 	"firestarter/internal/connections"
 	"firestarter/internal/interfaces"
 	"firestarter/internal/protocols/h1c"
@@ -14,16 +15,34 @@ import (
 // AbstractFactory decides which protocol-specific factory to use
 type AbstractFactory struct {
 	factories   map[interfaces.ProtocolType]types.ListenerFactory
-	connManager *connections.ConnectionManager // Add this field
+	connManager *connections.ConnectionManager
 }
 
 // NewAbstractFactory creates a new AbstractFactory with all registered protocol factories
 func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFactory {
+	certProvider, err := certificates.GetDefaultCertificateProvider()
+	if err != nil {
+		fmt.Printf("Warning: Failed to load certificates: %v\n", err)
+		fmt.Println("TLS listeners will not be available.")
+		// Continue without TLS support
+		return &AbstractFactory{
+			factories: map[interfaces.ProtocolType]types.ListenerFactory{
+				interfaces.H1C: &h1c.Factory{},
+				interfaces.H2C: &h2c.Factory{},
+				// H1TLS is not added because certificates failed to load
+			},
+			connManager: connManager,
+		}
+	}
+
+	// Create an H1TLS factory with the certificate provider
+	h1tlsFactory := h1tls.NewFactory(certProvider)
+
 	return &AbstractFactory{
 		factories: map[interfaces.ProtocolType]types.ListenerFactory{
 			interfaces.H1C:   &h1c.Factory{},
 			interfaces.H2C:   &h2c.Factory{},
-			interfaces.H1TLS: &h1tls.Factory{},
+			interfaces.H1TLS: h1tlsFactory,
 			// Other protocols will be added here as they are implemented
 		},
 		connManager: connManager,

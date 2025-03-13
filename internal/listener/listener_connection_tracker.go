@@ -22,22 +22,22 @@ func NewConnectionTrackingListener(l net.Listener, cm interfaces.ConnectionManag
 }
 
 func (ctl *ConnectionTrackingListener) Accept() (net.Conn, error) {
-	// Accept the underlying connection
 	conn, err := ctl.Listener.Accept()
 	if err != nil {
 		return nil, err
 	}
 
-	// Create appropriate connection type based on protocol
 	var managedConn connections.Connection
 	switch ctl.protocol {
 	case interfaces.H1C:
 		managedConn = connections.NewHTTP1Connection(conn)
 	case interfaces.H2C:
 		managedConn = connections.NewHTTP2Connection(conn)
+	case interfaces.H1TLS:
+		managedConn = connections.NewHTTP1TLSConnection(conn)
 	default:
 		log.Printf("Unsupported protocol type: %v", ctl.protocol)
-		return conn, nil // Return unwrapped connection if protocol not supported
+		return conn, nil
 	}
 
 	// Wrap the connection with our tracking wrapper
