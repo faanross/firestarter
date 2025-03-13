@@ -17,14 +17,13 @@ import (
 	"time"
 )
 
-// Define port and protocol configurations
 var listenerConfigs = []struct {
 	Port     string
 	Protocol interfaces.ProtocolType
 }{
-	{"7777", interfaces.H1C}, // HTTP/1.1 on port 7777
-	{"8888", interfaces.H2C}, // HTTP/2 on port 8888
-	{"9999", interfaces.H2C}, // HTTP/2 on port 9999
+	{"7777", interfaces.H1C},   // HTTP/1.1 on port 7777
+	{"8888", interfaces.H2C},   // HTTP/2 on port 8888
+	{"9999", interfaces.H1TLS}, // HTTP/2 on port 9999
 }
 
 func main() {
@@ -34,7 +33,6 @@ func main() {
 
 	// Start our Websocket (:8080) for UI integration
 	websocket.StartWebSocketServer()
-	time.Sleep(5 * time.Second)
 
 	// Create the components
 	connectionManager := connections.NewConnectionManager()

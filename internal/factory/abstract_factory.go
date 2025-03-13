@@ -4,6 +4,7 @@ import (
 	"firestarter/internal/connections"
 	"firestarter/internal/interfaces"
 	"firestarter/internal/protocols/h1c"
+	"firestarter/internal/protocols/h1tls"
 	"firestarter/internal/protocols/h2c"
 	"firestarter/internal/types"
 	"fmt"
@@ -20,8 +21,9 @@ type AbstractFactory struct {
 func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFactory {
 	return &AbstractFactory{
 		factories: map[interfaces.ProtocolType]types.ListenerFactory{
-			interfaces.H1C: &h1c.Factory{},
-			interfaces.H2C: &h2c.Factory{},
+			interfaces.H1C:   &h1c.Factory{},
+			interfaces.H2C:   &h2c.Factory{},
+			interfaces.H1TLS: &h1tls.Factory{},
 			// Other protocols will be added here as they are implemented
 		},
 		connManager: connManager,

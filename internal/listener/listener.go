@@ -84,20 +84,20 @@ func (l *ConcreteListener) Stop() error {
 	return nil
 }
 
-func (l *ConcreteListener) GetProtocol() interfaces.ProtocolType {
+func (l *ConcreteListener) GetProtocol() string {
 	switch l.Protocol {
 	case interfaces.H1C:
-		return interfaces.H1C
+		return "HTTP/1.1 Clear"
 	case interfaces.H1TLS:
-		return interfaces.H1TLS
+		return "HTTP/1.1 TLS"
 	case interfaces.H2C:
-		return interfaces.H2C
+		return "HTTP/2 Clear"
 	case interfaces.H2TLS:
-		return interfaces.H2TLS
+		return "HTTP/2 TLS"
 	case interfaces.H3:
-		return interfaces.H3
+		return "HTTP/3"
 	default:
-		return interfaces.H3
+		return "Unknown Protocol"
 	}
 }
 

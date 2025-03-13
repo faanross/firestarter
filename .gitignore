@@ -31,4 +31,6 @@ go.work
 Icon
 ._*
 .Spotlight-V100
-.Trashes
+.Trashes/certs
+
+cert/

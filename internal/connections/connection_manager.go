@@ -12,9 +12,6 @@ type ConnectionManager struct {
 	mu          sync.RWMutex
 }
 
-// Make sure we implement the interface
-var _ interfaces.ConnectionManager = (*ConnectionManager)(nil)
-
 // NewConnectionManager creates a new ConnectionManager with an initialized connections map
 func NewConnectionManager() *ConnectionManager {
 	return &ConnectionManager{

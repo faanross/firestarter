@@ -10,7 +10,7 @@ import (
 type Listener interface {
 	Start() error
 	Stop() error
-	GetProtocol() interfaces.ProtocolType
+	GetProtocol() string
 	GetPort() string
 	GetID() string
 	GetCreatedAt() time.Time
