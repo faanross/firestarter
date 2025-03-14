@@ -35,12 +35,13 @@ func (ctl *ConnectionTrackingListener) Accept() (net.Conn, error) {
 		managedConn = connections.NewHTTP2Connection(conn)
 	case interfaces.H1TLS:
 		managedConn = connections.NewHTTP1TLSConnection(conn)
+	case interfaces.H2TLS:
+		managedConn = connections.NewHTTP2TLSConnection(conn)
 	default:
 		log.Printf("Unsupported protocol type: %v", ctl.protocol)
 		return conn, nil
 	}
-
-	// Wrap the connection with our tracking wrapper
+	
 	trackingConn := connections.NewTrackingConnection(conn, managedConn, ctl.connManager)
 
 	return trackingConn, nil

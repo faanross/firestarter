@@ -13,15 +13,16 @@ import (
 
 // ConcreteListener represents an HTTP server instance
 type ConcreteListener struct {
-	ID          string
-	Port        string
-	Protocol    interfaces.ProtocolType
-	Router      *chi.Mux
-	CreatedAt   time.Time
-	server      *http.Server
-	handler     http.Handler
-	connManager interfaces.ConnectionManager
-	tlsConfig   *tls.Config
+	ID               string
+	Port             string
+	Protocol         interfaces.ProtocolType
+	Router           *chi.Mux
+	CreatedAt        time.Time
+	server           *http.Server
+	handler          http.Handler
+	connManager      interfaces.ConnectionManager
+	tlsConfig        *tls.Config
+	postServerInitFn func(*http.Server)
 }
 
 // GetCreatedAt returns time when listener was created
@@ -59,6 +60,11 @@ func (l *ConcreteListener) Start() error {
 			return l.Router
 		}(),
 		TLSConfig: l.tlsConfig,
+	}
+
+	// Call the post-initialization function if set
+	if l.postServerInitFn != nil {
+		l.postServerInitFn(l.server)
 	}
 
 	// If TLS is configured, use ServeTLS, otherwise use Serve
@@ -131,4 +137,9 @@ func NewConcreteListener(id string, port string, protocol interfaces.ProtocolTyp
 
 func (l *ConcreteListener) SetTLSConfig(config *tls.Config) {
 	l.tlsConfig = config
+}
+
+// SetPostServerInitFunc sets a function that will be called after the server is created but before it starts
+func (l *ConcreteListener) SetPostServerInitFunc(fn func(*http.Server)) {
+	l.postServerInitFn = fn
 }

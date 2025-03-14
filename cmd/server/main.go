@@ -21,9 +21,10 @@ var listenerConfigs = []struct {
 	Port     string
 	Protocol interfaces.ProtocolType
 }{
-	{"7777", interfaces.H1C},   // HTTP/1.1 on port 7777
-	{"8888", interfaces.H2C},   // HTTP/2 on port 8888
-	{"9999", interfaces.H1TLS}, // HTTP/1.1 TLS on port 9999
+	{"7777", interfaces.H1C},    // HTTP/1.1 on port 7777
+	{"8888", interfaces.H2C},    // HTTP/2 on port 8888
+	{"9999", interfaces.H1TLS},  // HTTP/1.1 TLS on port 9999
+	{"11111", interfaces.H2TLS}, // HTTP/2 TLS on port 11111
 }
 
 func main() {
