@@ -1,9 +1,9 @@
 package connections
 
 import (
-	"encoding/hex"
 	"firestarter/internal/interfaces"
 	"fmt"
+	"math/rand"
 	"time"
 )
 
@@ -25,9 +25,5 @@ type BaseConnection struct {
 }
 
 func GenerateUniqueID() string {
-	timestamp := time.Now().UTC().UnixNano()
-	randomBytes := make([]byte, 4)
-	randomHex := hex.EncodeToString(randomBytes)
-
-	return fmt.Sprintf("conn_%d_%s", timestamp, randomHex)
+	return fmt.Sprintf("connection_%06d", rand.Intn(1000000))
 }
