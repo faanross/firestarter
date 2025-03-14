@@ -4,8 +4,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -153,7 +154,7 @@ func (a *HTTP1Agent) RunHealthCheck() error {
 	defer resp.Body.Close()
 
 	// Read response body
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024)) // Limit to first 1KB
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
@@ -247,7 +248,7 @@ func (a *HTTP2ClearAgent) RunHealthCheck() error {
 	defer resp.Body.Close()
 
 	// Read response body
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024)) // Limit to first 1KB
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
@@ -345,7 +346,7 @@ func (a *HTTP1TLSAgent) RunHealthCheck() error {
 	defer resp.Body.Close()
 
 	// Read response body
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024)) // Limit to first 1KB
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
@@ -443,7 +444,7 @@ func (a *HTTP2TLSAgent) RunHealthCheck() error {
 	defer resp.Body.Close()
 
 	// Read response body
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024)) // Limit to first 1KB
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
@@ -459,7 +460,7 @@ func (a *HTTP2TLSAgent) RunHealthCheck() error {
 // HTTP3Agent represents a test agent for HTTP/3
 type HTTP3Agent struct {
 	BaseAgent
-	quicClient *http3.Client
+	quicClient *http3.Transport
 }
 
 // NewHTTP3Agent creates a new HTTP/3 agent
@@ -468,15 +469,26 @@ func NewHTTP3Agent(port string) *HTTP3Agent {
 	agent.Initialize("H3", port)
 
 	// Configure HTTP/3 specific settings
-	agent.quicClient = &http3.Client{
+	qconf := &quic.Config{
+		MaxIdleTimeout: 30 * time.Second,
+	}
+
+	// Create the HTTP/3 transport
+	transport := &http3.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true, // Skip certificate validation for testing
 		},
+		QUICConfig:      qconf,
+		EnableDatagrams: false,
 	}
 
-	// We'll use a dummy regular HTTP client for uniformity
+	// Store the transport
+	agent.quicClient = transport
+
+	// Create an HTTP client using the HTTP/3 transport
 	agent.Client = &http.Client{
-		Timeout: 30 * time.Second,
+		Transport: transport,
+		Timeout:   30 * time.Second,
 	}
 
 	return agent
@@ -534,15 +546,15 @@ func (a *HTTP3Agent) Stop() error {
 func (a *HTTP3Agent) RunHealthCheck() error {
 	a.Log("Performing health check...")
 
-	// Use the HTTP/3 client for the request
-	resp, err := a.quicClient.Get(a.TargetURL)
+	// Use the regular client which now has HTTP/3 transport
+	resp, err := a.Client.Get(a.TargetURL)
 	if err != nil {
 		return fmt.Errorf("HTTP/3 connection failed: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Read response body
-	body, err := ioutil.ReadAll(resp.Body)
+	// Read response body with limit
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024)) // Limit to first 1KB
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
@@ -560,11 +572,18 @@ func main() {
 	fmt.Println("===============================")
 
 	// Create a channel to listen for OS signals
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
+	// In main(), replace the signal handling with this pattern
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	// Channel to coordinate shutdown
 	shutdownChan := make(chan struct{})
+
+	// Create a separate goroutine to handle signals
+	go func() {
+		<-signalChan
+		fmt.Println("\n🛑 Shutdown signal received, closing all connections...")
+		close(shutdownChan)
+	}()
 
 	// Wait group to track all agents
 	var wg sync.WaitGroup
@@ -603,14 +622,8 @@ func main() {
 	// Print summary
 	fmt.Println("\nAll agents started. Press Ctrl+C to terminate.")
 
-	// Wait for termination signal
-	<-sigs
-	fmt.Println("\n🛑 Shutdown signal received, closing all connections...")
-
-	// Signal all agents to shut down
-	close(shutdownChan)
-
 	// Wait for all agents to complete shutdown
 	wg.Wait()
-	fmt.Println("All agents shut down successfully.")
+	fmt.Println("🛑 All agents shut down successfully.")
+
 }

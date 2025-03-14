@@ -246,6 +246,12 @@ func getProtocolName(protocol interfaces.ProtocolType) string {
 		return "HTTP/1.1"
 	case interfaces.H2C:
 		return "HTTP/2"
+	case interfaces.H1TLS:
+		return "HTTP/1.1 TLS"
+	case interfaces.H2TLS:
+		return "HTTP/2 TLS"
+	case interfaces.H3:
+		return "HTTP/3"
 	default:
 		return "Unknown"
 	}
