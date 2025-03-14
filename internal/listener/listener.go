@@ -39,6 +39,10 @@ func (l *ConcreteListener) SetHandler(handler http.Handler) {
 func (l *ConcreteListener) Start() error {
 	addr := fmt.Sprintf(":%s", l.Port)
 
+	fmt.Printf("|DEBUG| Starting %s Listener with protocol %v\n", l.ID, l.Protocol)
+	fmt.Printf("|DEBUG| TLS Config present: %v\n", l.tlsConfig != nil)
+	fmt.Printf("|DEBUG| Server pre-configured: %v\n", l.server != nil)
+
 	fmt.Printf("|START| %s Listener %s serving on %s\n", l.GetProtocol(), l.ID, addr)
 
 	// Create a standard TCP listener
@@ -50,26 +54,33 @@ func (l *ConcreteListener) Start() error {
 	// Wrap with our connection tracking listener
 	trackingListener := NewConnectionTrackingListener(tcpListener, l.connManager, l.Protocol)
 
-	// Create the server instance
-	l.server = &http.Server{
-		Addr: addr,
-		Handler: func() http.Handler {
-			if l.handler != nil {
-				return l.handler
-			}
-			return l.Router
-		}(),
-		TLSConfig: l.tlsConfig,
-	}
+	// If server isn't already set, create it
+	if l.server == nil {
+		l.server = &http.Server{
+			Addr: addr,
+			Handler: func() http.Handler {
+				if l.handler != nil {
+					return l.handler
+				}
+				return l.Router
+			}(),
+			TLSConfig: l.tlsConfig,
+		}
 
-	// Call the post-initialization function if set
-	if l.postServerInitFn != nil {
-		l.postServerInitFn(l.server)
+		// Call the post-initialization function if set
+		if l.postServerInitFn != nil {
+			l.postServerInitFn(l.server)
+		}
+	} else {
+		// If server is already set, just ensure it has the right address and TLS config
+		l.server.Addr = addr
+		if l.tlsConfig != nil && l.server.TLSConfig == nil {
+			l.server.TLSConfig = l.tlsConfig
+		}
 	}
 
 	// If TLS is configured, use ServeTLS, otherwise use Serve
 	if l.tlsConfig != nil {
-		// Empty strings for cert and key files because we're providing the certificates in TLSConfig
 		return l.server.ServeTLS(trackingListener, "", "")
 	} else {
 		return l.server.Serve(trackingListener)

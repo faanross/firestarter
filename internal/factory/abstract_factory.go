@@ -30,7 +30,6 @@ func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFac
 			factories: map[interfaces.ProtocolType]types.ListenerFactory{
 				interfaces.H1C: &h1c.Factory{},
 				interfaces.H2C: &h2c.Factory{},
-				// H1TLS is not added because certificates failed to load
 			},
 			connManager: connManager,
 		}
