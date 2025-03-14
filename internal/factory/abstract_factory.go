@@ -8,6 +8,7 @@ import (
 	"firestarter/internal/protocols/h1tls"
 	"firestarter/internal/protocols/h2c"
 	"firestarter/internal/protocols/h2tls"
+	"firestarter/internal/protocols/h3"
 	"firestarter/internal/types"
 	"fmt"
 	"math/rand"
@@ -38,6 +39,7 @@ func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFac
 	// Create an H1TLS factory with the certificate provider
 	h1tlsFactory := h1tls.NewFactory(certProvider)
 	h2tlsFactory := h2tls.NewFactory(certProvider)
+	h3Factory := h3.NewFactory(certProvider)
 
 	return &AbstractFactory{
 		factories: map[interfaces.ProtocolType]types.ListenerFactory{
@@ -45,7 +47,7 @@ func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFac
 			interfaces.H2C:   &h2c.Factory{},
 			interfaces.H1TLS: h1tlsFactory,
 			interfaces.H2TLS: h2tlsFactory,
-			// Other protocols will be added here as they are implemented
+			interfaces.H3:    h3Factory,
 		},
 		connManager: connManager,
 	}

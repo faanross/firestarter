@@ -2,6 +2,7 @@ package h3
 
 import (
 	"context"
+	"crypto/tls"
 	"firestarter/internal/connections"
 	"firestarter/internal/interfaces"
 	"fmt"
@@ -25,6 +26,7 @@ type HTTP3Listener struct {
 	quicConfig  *quic.Config
 	ctx         context.Context
 	cancel      context.CancelFunc
+	tlsConfig   *tls.Config
 }
 
 // NewHTTP3Listener creates a new HTTP/3 listener
@@ -56,22 +58,21 @@ func (l *HTTP3Listener) Start() error {
 	}
 	l.udpListener = udpConn
 
-	// Create a QUIC transport
-	transport := &quic.Transport{
-		Conn: udpConn,
-	}
-
-	// QUIC configuration
+	// QUIC configuration - Now includes Versions
 	l.quicConfig = &quic.Config{
 		MaxIdleTimeout:  30 * time.Second,
 		EnableDatagrams: true,
 	}
 
-	// Create the HTTP/3 server
+	// Create the HTTP/3 server - Removed Versions field
 	h3Server := &http3.Server{
-		Handler:    l.Router,
-		QuicConfig: l.quicConfig,
+		Handler:         l.Router,
+		TLSConfig:       l.tlsConfig,
+		EnableDatagrams: true,
 	}
+
+	// Set the QUIC config
+	h3Server.QUICConfig = l.quicConfig
 
 	// Create the connection observer
 	observer := connections.NewQuicConnectionObserver(l.connManager)
@@ -83,7 +84,7 @@ func (l *HTTP3Listener) Start() error {
 
 	// Start the server (non-blocking)
 	go func() {
-		err := l.server.Serve(transport)
+		err := l.server.Serve(udpConn)
 		if err != nil && l.ctx.Err() == nil {
 			// Only log errors that aren't due to intentional shutdown
 			fmt.Printf("HTTP/3 server error: %v\n", err)
@@ -124,3 +125,12 @@ func (l *HTTP3Listener) GetID() string           { return l.ID }
 func (l *HTTP3Listener) GetPort() string         { return l.Port }
 func (l *HTTP3Listener) GetProtocol() string     { return "HTTP/3" }
 func (l *HTTP3Listener) GetCreatedAt() time.Time { return l.CreatedAt }
+
+func (l *HTTP3Listener) SetTLSConfig(config *tls.Config) {
+	l.tlsConfig = config
+
+	// If we already have a server, update its TLS config
+	if l.server != nil && l.server.Server != nil {
+		l.server.Server.TLSConfig = config
+	}
+}
