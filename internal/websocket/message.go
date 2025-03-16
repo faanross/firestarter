@@ -9,10 +9,12 @@ import (
 type MessageType string
 
 const (
-	// Message types
-	ListenerCreated   MessageType = "listener_created"
-	ListenerStopped   MessageType = "listener_stopped"
-	ListenersSnapshot MessageType = "listeners_snapshot"
+	ListenerCreated     MessageType = "listener_created"
+	ListenerStopped     MessageType = "listener_stopped"
+	ListenersSnapshot   MessageType = "listeners_snapshot"
+	ConnectionCreated   MessageType = "connection_created"
+	ConnectionStopped   MessageType = "connection_stopped"
+	ConnectionsSnapshot MessageType = "connections_snapshot"
 )
 
 // ListenerInfo represents the data about a listener that will be sent to UI
