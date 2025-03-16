@@ -22,6 +22,7 @@ type BaseConnection struct {
 	Protocol  interfaces.ProtocolType
 	Port      string
 	CreatedAt time.Time
+	AgentUUID string
 }
 
 func GenerateUniqueID() string {
