@@ -58,6 +58,8 @@ func (l *HTTP3Listener) Start() error {
 	}
 	l.udpListener = udpConn
 
+	fmt.Printf("[H3-DEBUG] Created UDP listener for HTTP/3 on %s: %v\n", addr, udpConn != nil)
+
 	// QUIC configuration - Now includes Versions
 	l.quicConfig = &quic.Config{
 		MaxIdleTimeout:  30 * time.Second,
@@ -74,18 +76,51 @@ func (l *HTTP3Listener) Start() error {
 	// Set the QUIC config
 	h3Server.QUICConfig = l.quicConfig
 
+	fmt.Printf("[H3-DEBUG] Configured QUIC with IdleTimeout: %v, EnableDatagrams: %v\n",
+		l.quicConfig.MaxIdleTimeout, l.quicConfig.EnableDatagrams)
+
 	// Create the connection observer
 	observer := connections.NewQuicConnectionObserver(l.connManager)
 
 	// Create our enhanced server with connection tracking
 	l.server = NewEnhancedHTTP3Server(h3Server, observer)
 
-	// Start the server (non-blocking)
+	fmt.Printf("[H3-DEBUG] Created enhanced HTTP/3 server with observer: %v\n", observer != nil)
+
+	fmt.Printf("[H3-DEBUG] Created HTTP/3 server with TLS config: %v, Handler type: %T\n",
+		l.tlsConfig != nil, l.Router)
+
+	// MODIFICATION: Instead of using l.server.Serve, we'll create a QUIC listener
+	// and manually handle connections to ensure they pass through our enhanced server
+	quicListener, err := quic.Listen(udpConn, l.tlsConfig, l.quicConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create QUIC listener: %w", err)
+	}
+
+	fmt.Printf("[H3-DEBUG] Created QUIC listener for HTTP/3\n")
+
+	// Start accepting connections in a goroutine
 	go func() {
-		err := l.server.Serve(udpConn)
-		if err != nil && l.ctx.Err() == nil {
-			// Only log errors that aren't due to intentional shutdown
-			fmt.Printf("HTTP/3 server error: %v\n", err)
+		for {
+			// Accept a new QUIC connection
+			conn, err := quicListener.Accept(l.ctx)
+			if err != nil {
+				if l.ctx.Err() == nil {
+					// Only log errors that aren't due to intentional shutdown
+					fmt.Printf("HTTP/3 accept error: %v\n", err)
+				}
+				return
+			}
+
+			fmt.Printf("[H3-DEBUG] Accepted new QUIC connection from %s\n", conn.RemoteAddr())
+
+			// Explicitly pass the connection to our enhanced server to ensure
+			// our connection tracking hooks are called
+			go func(c quic.Connection) {
+				if err := l.server.ServeQUICConn(c); err != nil {
+					fmt.Printf("HTTP/3 connection serving error: %v\n", err)
+				}
+			}(conn)
 		}
 	}()
 

@@ -20,6 +20,9 @@ func NewConnectionManager() *ConnectionManager {
 }
 
 func (cm *ConnectionManager) AddConnection(conn interfaces.Connection) {
+
+	fmt.Printf("[CONN-MGR-DEBUG] AddConnection called for connection ID: %s, Protocol: %v\n", conn.GetID(), conn.GetProtocol())
+
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
@@ -76,6 +79,8 @@ func (cm *ConnectionManager) GetConnection(id string) (interfaces.Connection, bo
 func (cm *ConnectionManager) GetConnectionsByProtocol(protocolType interfaces.ProtocolType) []interfaces.Connection {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
+
+	fmt.Printf("[CONN-MGR-DEBUG] GetConnectionsByProtocol called for protocol: %v\n", protocolType)
 
 	filtered := make([]interfaces.Connection, 0)
 	for _, conn := range cm.connections {

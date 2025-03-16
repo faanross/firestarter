@@ -561,6 +561,9 @@ func (a *HTTP3Agent) RunHealthCheck() error {
 
 	a.Log("Health check successful (Status: %s, Body: %s)",
 		resp.Status, string(body))
+
+	fmt.Printf("[H3-CLIENT-DEBUG] HTTP/3 connection successful to %s (Proto: %s)\n", a.TargetURL, resp.Proto)
+	
 	return nil
 }
 

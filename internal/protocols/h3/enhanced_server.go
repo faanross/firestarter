@@ -22,13 +22,14 @@ func NewEnhancedHTTP3Server(server *http3.Server, observer *connections.QuicConn
 }
 
 // ServeQUICConn intercepts QUIC connections for tracking before handling
-func (s *EnhancedHTTP3Server) ServeQUICConn(conn quic.Connection) {
-
+func (s *EnhancedHTTP3Server) ServeQUICConn(conn quic.Connection) error {
 	fmt.Printf("[H3-DEBUG] ServeQUICConn called for connection from: %s\n", conn.RemoteAddr().String())
-	
+
 	// Notify our observer about the new connection
 	s.observer.OnConnectionEstablished(conn)
 
-	// Continue with normal HTTP/3 handling
-	s.Server.ServeQUICConn(conn)
+	fmt.Printf("[H3-SERVER-DEBUG] Observer notified, continuing with standard HTTP/3 handling\n")
+
+	// Continue with normal HTTP/3 handling and return its error
+	return s.Server.ServeQUICConn(conn)
 }

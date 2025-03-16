@@ -187,6 +187,9 @@ func (s *ListenerService) LogConnectionStatus() {
 
 	// Group by protocol
 	protocolCounts := make(map[interfaces.ProtocolType]int)
+
+	fmt.Printf("[CONN-STATUS-DEBUG] Found protocol counts: %v\n", protocolCounts)
+	
 	for _, conn := range connections {
 		protocolCounts[conn.GetProtocol()]++
 	}
