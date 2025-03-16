@@ -2,6 +2,7 @@ package h3
 
 import (
 	"firestarter/internal/connections"
+	"fmt"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 )
@@ -22,6 +23,9 @@ func NewEnhancedHTTP3Server(server *http3.Server, observer *connections.QuicConn
 
 // ServeQUICConn intercepts QUIC connections for tracking before handling
 func (s *EnhancedHTTP3Server) ServeQUICConn(conn quic.Connection) {
+
+	fmt.Printf("[H3-DEBUG] ServeQUICConn called for connection from: %s\n", conn.RemoteAddr().String())
+	
 	// Notify our observer about the new connection
 	s.observer.OnConnectionEstablished(conn)
 

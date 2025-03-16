@@ -80,8 +80,6 @@ func (l *HTTP3Listener) Start() error {
 	// Create our enhanced server with connection tracking
 	l.server = NewEnhancedHTTP3Server(h3Server, observer)
 
-	fmt.Printf("|START| HTTP/3 Listener %s serving on %s\n", l.ID, addr)
-
 	// Start the server (non-blocking)
 	go func() {
 		err := l.server.Serve(udpConn)
@@ -90,6 +88,9 @@ func (l *HTTP3Listener) Start() error {
 			fmt.Printf("HTTP/3 server error: %v\n", err)
 		}
 	}()
+
+	fmt.Printf("[H3-DEBUG] HTTP/3 listener %s started on %s with UDP listener: %v, TLS config present: %v\n",
+		l.ID, addr, l.udpListener != nil, l.tlsConfig != nil)
 
 	return nil
 }
