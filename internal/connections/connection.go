@@ -13,6 +13,7 @@ type Connection interface {
 	GetProtocol() interfaces.ProtocolType
 	GetCreatedAt() time.Time
 	GetPort() string
+	GetAgentUUID() string
 	Close() error
 }
 

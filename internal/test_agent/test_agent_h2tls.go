@@ -88,8 +88,17 @@ func (a *HTTP2TLSAgent) Stop() error {
 // RunHealthCheck performs a connection check
 func (a *HTTP2TLSAgent) RunHealthCheck() error {
 	a.Log("Performing health check...")
+	// Create a request with our UUID header
+	req, err := http.NewRequest("GET", a.TargetURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
 
-	resp, err := a.Client.Get(a.TargetURL)
+	// Add the agent UUID as a custom header
+	req.Header.Add("X-Agent-UUID", a.ID)
+
+	// Execute the request
+	resp, err := a.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("connection failed: %w", err)
 	}

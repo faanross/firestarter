@@ -30,3 +30,4 @@ func (c *HTTP3Connection) GetProtocol() interfaces.ProtocolType { return c.Proto
 func (c *HTTP3Connection) GetCreatedAt() time.Time              { return c.CreatedAt }
 func (c *HTTP3Connection) GetPort() string                      { return c.Port }
 func (c *HTTP3Connection) Close() error                         { return c.QUICConn.CloseWithError(0, "closed by server") }
+func (c *HTTP3Connection) GetAgentUUID() string                 { return c.AgentUUID }

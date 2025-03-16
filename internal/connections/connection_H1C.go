@@ -30,3 +30,4 @@ func (c *HTTP1Connection) GetProtocol() interfaces.ProtocolType {
 func (c *HTTP1Connection) GetCreatedAt() time.Time { return c.CreatedAt }
 func (c *HTTP1Connection) GetPort() string         { return c.Port }
 func (c *HTTP1Connection) Close() error            { return c.Conn.Close() }
+func (c *HTTP1Connection) GetAgentUUID() string    { return c.AgentUUID }

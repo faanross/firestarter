@@ -32,3 +32,4 @@ func (c *HTTP2TLSConnection) GetProtocol() interfaces.ProtocolType {
 func (c *HTTP2TLSConnection) GetCreatedAt() time.Time { return c.CreatedAt }
 func (c *HTTP2TLSConnection) GetPort() string         { return c.Port }
 func (c *HTTP2TLSConnection) Close() error            { return c.Conn.Close() }
+func (c *HTTP2TLSConnection) GetAgentUUID() string    { return c.AgentUUID }

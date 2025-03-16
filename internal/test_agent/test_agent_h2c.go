@@ -85,7 +85,17 @@ func (a *HTTP2ClearAgent) Stop() error {
 func (a *HTTP2ClearAgent) RunHealthCheck() error {
 	a.Log("Performing health check...")
 
-	resp, err := a.Client.Get(a.TargetURL)
+	// Create a request with our UUID header
+	req, err := http.NewRequest("GET", a.TargetURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add the agent UUID as a custom header
+	req.Header.Add("X-Agent-UUID", a.ID)
+
+	// Execute the request
+	resp, err := a.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("connection failed: %w", err)
 	}

@@ -30,3 +30,4 @@ func (c *HTTP2Connection) GetProtocol() interfaces.ProtocolType {
 func (c *HTTP2Connection) GetCreatedAt() time.Time { return c.CreatedAt }
 func (c *HTTP2Connection) GetPort() string         { return c.Port }
 func (c *HTTP2Connection) Close() error            { return c.Conn.Close() }
+func (c *HTTP2Connection) GetAgentUUID() string    { return c.AgentUUID }

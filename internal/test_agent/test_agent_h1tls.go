@@ -89,12 +89,21 @@ func (a *HTTP1TLSAgent) Stop() error {
 func (a *HTTP1TLSAgent) RunHealthCheck() error {
 	a.Log("Performing health check...")
 
-	resp, err := a.Client.Get(a.TargetURL)
+	// Create a request with our UUID header
+	req, err := http.NewRequest("GET", a.TargetURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add the agent UUID as a custom header
+	req.Header.Add("X-Agent-UUID", a.ID)
+
+	// Execute the request
+	resp, err := a.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("connection failed: %w", err)
 	}
 	defer resp.Body.Close()
-
 	// Read response body
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024)) // Limit to first 1KB
 	if err != nil {
