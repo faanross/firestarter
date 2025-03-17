@@ -61,9 +61,9 @@ type ConnectionInfo struct {
 // ConvertConnection converts a connection to ConnectionInfo format
 func ConvertConnection(conn interfaces.Connection) ConnectionInfo {
 	return ConnectionInfo{
-		ID:         conn.GetID(),
-		Port:       conn.GetPort(),
-		Protocol:   getProtocolName(conn.GetProtocol()),
+		ID:   conn.GetID(),
+		Port: conn.GetPort(),
+		//Protocol:   getProtocolName(conn.GetProtocol()),
 		CreatedAt:  conn.GetCreatedAt(),
 		RemoteAddr: getRemoteAddrFromConnection(conn),
 		AgentUUID:  conn.GetAgentUUID(),

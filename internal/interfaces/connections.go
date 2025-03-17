@@ -19,6 +19,8 @@ type Connection interface {
 	GetProtocol() ProtocolType
 	GetCreatedAt() time.Time
 	GetPort() string
+	GetAgentUUID() string
+	SetAgentUUID(string)
 	Close() error
 }
 
@@ -28,4 +30,5 @@ type ConnectionManager interface {
 	RemoveConnection(id string)
 	GetAllConnections() []Connection
 	Count() int
+	GetConnection(id string) (Connection, bool)
 }

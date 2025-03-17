@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
+	"net/http"
+	"sync"
 )
 
 // EnhancedHTTP3Server extends the standard HTTP/3 server with connection tracking
@@ -23,7 +25,30 @@ func NewEnhancedHTTP3Server(server *http3.Server, observer *connections.QuicConn
 
 // ServeQUICConn intercepts QUIC connections for tracking before handling
 func (s *EnhancedHTTP3Server) ServeQUICConn(conn quic.Connection) error {
-	fmt.Printf("[H3-DEBUG] ServeQUICConn called for connection from: %s\n", conn.RemoteAddr().String())
+	fmt.Printf("[H3-DEBUG] ServeQUICConn called for connection from: %s\n",
+		conn.RemoteAddr().String())
+
+	// Store connection in a map with empty UUID initially
+	h3ConnectionUUIDs.Store(conn.RemoteAddr().String(), "")
+
+	// Install header extractor
+	s.Server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Extract UUID from headers in HTTP/3 requests
+		agentUUID := r.Header.Get("X-Agent-UUID")
+		if agentUUID != "" {
+			// We found a UUID, associate it with this QUIC connection
+			fmt.Printf("[HTTP/3] Extracted agent UUID: %s from QUIC connection\n", agentUUID)
+
+			// Update the UUID map
+			h3ConnectionUUIDs.Store(conn.RemoteAddr().String(), agentUUID)
+
+			// Update any existing tracked connections
+			// This is more complex for HTTP/3 and would need custom implementation
+		}
+
+		// Call the original handler
+		s.Server.Handler.ServeHTTP(w, r)
+	})
 
 	// Notify our observer about the new connection
 	s.observer.OnConnectionEstablished(conn)
@@ -33,3 +58,6 @@ func (s *EnhancedHTTP3Server) ServeQUICConn(conn quic.Connection) error {
 	// Continue with normal HTTP/3 handling and return its error
 	return s.Server.ServeQUICConn(conn)
 }
+
+// Add a global map to track HTTP/3 connection UUIDs
+var h3ConnectionUUIDs sync.Map

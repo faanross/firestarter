@@ -2,6 +2,7 @@ package connections
 
 import (
 	"firestarter/internal/interfaces"
+	"fmt"
 	"github.com/quic-go/quic-go"
 	"time"
 )
@@ -31,3 +32,11 @@ func (c *HTTP3Connection) GetCreatedAt() time.Time              { return c.Creat
 func (c *HTTP3Connection) GetPort() string                      { return c.Port }
 func (c *HTTP3Connection) Close() error                         { return c.QUICConn.CloseWithError(0, "closed by server") }
 func (c *HTTP3Connection) GetAgentUUID() string                 { return c.AgentUUID }
+
+// SetAgentUUID updates the agent UUID for this connection
+func (c *HTTP3Connection) SetAgentUUID(uuid string) {
+	if uuid != "" && c.AgentUUID != uuid {
+		fmt.Printf("[UUID-Track-DEBUG] HTTP3Connection: Updating connection %s with agent UUID: %s\n", c.ID, uuid)
+		c.AgentUUID = uuid
+	}
+}

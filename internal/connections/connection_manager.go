@@ -4,44 +4,74 @@ import (
 	"firestarter/internal/interfaces"
 	"fmt"
 	"sync"
+	"time"
 )
 
 // ConnectionManager implements interfaces.ConnectionManager
 type ConnectionManager struct {
-	connections map[string]interfaces.Connection
-	mu          sync.RWMutex
+	connections       map[string]interfaces.Connection
+	connectionHistory map[string][]string  // Maps agent UUID to a list of connection IDs
+	connectionTimes   map[string]time.Time // Maps connection ID to creation time
+	mu                sync.RWMutex
 }
 
 // NewConnectionManager creates a new ConnectionManager with an initialized connections map
 func NewConnectionManager() *ConnectionManager {
 	return &ConnectionManager{
-		connections: make(map[string]interfaces.Connection),
+		connections:       make(map[string]interfaces.Connection),
+		connectionHistory: make(map[string][]string),
+		connectionTimes:   make(map[string]time.Time),
 	}
 }
 
 func (cm *ConnectionManager) AddConnection(conn interfaces.Connection) {
-
-	fmt.Printf("[CONN-MGR-DEBUG] AddConnection called for connection ID: %s, Protocol: %v\n", conn.GetID(), conn.GetProtocol())
-
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
 	id := conn.GetID()
 	cm.connections[id] = conn
 
+	// Record connection creation time
+	cm.connectionTimes[id] = conn.GetCreatedAt()
+
+	// Track connection history by UUID if available
+	agentUUID := conn.GetAgentUUID()
+	if agentUUID != "" {
+		// Add this connection to the agent's history
+		cm.connectionHistory[agentUUID] = append(cm.connectionHistory[agentUUID], id)
+
+		// Check if this is a reconnection
+		if len(cm.connectionHistory[agentUUID]) > 1 {
+			fmt.Printf("Agent %s reconnected with connection %s\n", agentUUID, id)
+		}
+	}
+
 	// Log the addition
-	fmt.Printf("Connection added: %s (Protocol: %v, Total active: %d)\n",
-		id, conn.GetProtocol(), len(cm.connections))
+	fmt.Printf("Connection added: %s (Protocol: %v, UUID: %s, Total active: %d)\n",
+		id, conn.GetProtocol(), agentUUID, len(cm.connections))
+
+	if agentUUID != "" {
+		fmt.Printf("[UUID-Track-DEBUG] Connection manager: Connection %s has UUID %s on addition\n",
+			id, agentUUID)
+	}
 }
 
 func (cm *ConnectionManager) RemoveConnection(id string) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	if _, exists := cm.connections[id]; exists {
+	if conn, exists := cm.connections[id]; exists {
+		// The connection still exists in memory, so we can get its UUID
+		agentUUID := conn.GetAgentUUID()
+
+		// Remove from active connections
 		delete(cm.connections, id)
-		fmt.Printf("Connection removed: %s (Total remaining: %d)\n",
-			id, len(cm.connections))
+
+		// Note: We intentionally keep the connection in history
+		// This preserves the connection history for future reference
+
+		fmt.Printf("Connection removed: %s (UUID: %s, Total remaining: %d)\n",
+			id, agentUUID, len(cm.connections))
 	}
 }
 
@@ -72,6 +102,12 @@ func (cm *ConnectionManager) GetConnection(id string) (interfaces.Connection, bo
 	defer cm.mu.RUnlock()
 
 	conn, exists := cm.connections[id]
+
+	if exists && conn.GetAgentUUID() != "" {
+		fmt.Printf("[UUID-Track-DEBUG] Connection manager: Retrieved connection %s with UUID %s\n",
+			id, conn.GetAgentUUID())
+	}
+	
 	return conn, exists
 }
 
@@ -124,19 +160,20 @@ func (cm *ConnectionManager) LogStatus() {
 	}
 }
 
-// GetConnectionsByAgentUUID returns connections associated with a specific agent UUID
+// GetConnectionsByAgentUUID returns all active connections for a given agent UUID
 func (cm *ConnectionManager) GetConnectionsByAgentUUID(agentUUID string) []interfaces.Connection {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
 
-	var results []interfaces.Connection
+	var result []interfaces.Connection
+
 	for _, conn := range cm.connections {
 		if conn.GetAgentUUID() == agentUUID {
-			results = append(results, conn)
+			result = append(result, conn)
 		}
 	}
 
-	return results
+	return result
 }
 
 // CountByAgentUUID returns the number of connections for a specific agent UUID
@@ -176,4 +213,25 @@ func (cm *ConnectionManager) GetUniqueAgentUUIDs() []string {
 	}
 
 	return uuids
+}
+
+// GetConnectionHistoryByUUID returns the history of connections for an agent
+func (cm *ConnectionManager) GetConnectionHistoryByUUID(agentUUID string) []string {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	// Return copy of the history slice to prevent mutation
+	history := cm.connectionHistory[agentUUID]
+	result := make([]string, len(history))
+	copy(result, history)
+
+	return result
+}
+
+// IsReconnection checks if this is a reconnection from a known agent
+func (cm *ConnectionManager) IsReconnection(agentUUID string) bool {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	return len(cm.connectionHistory[agentUUID]) > 1
 }

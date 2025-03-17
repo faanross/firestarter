@@ -1,11 +1,27 @@
 package connections
 
 import (
+	"firestarter/internal/connregistry"
 	"firestarter/internal/interfaces"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 )
+
+// Ensure initializations are thread-safe
+var registryInitLock sync.Mutex
+
+// Package-level variable to hold registry reference
+var connectionRegistry *connregistry.ConnectionRegistry
+
+// SetConnectionRegistry sets the global connection registry reference
+func SetConnectionRegistry(registry *connregistry.ConnectionRegistry) {
+	if registry != nil {
+		connectionRegistry = registry
+		fmt.Printf("[UUID-Track-DEBUG] Connection tracking system linked to registry\n")
+	}
+}
 
 // TrackingConnection wraps a standard net.Conn and handles tracking lifecycle
 type TrackingConnection struct {
@@ -16,13 +32,12 @@ type TrackingConnection struct {
 	manager interfaces.ConnectionManager
 
 	// The tracked connection object
-	trackedConn Connection
+	trackedConn interfaces.Connection
 
 	// Flag to prevent double-close
 	closed bool
 }
 
-// NewTrackingConnection creates a new connection that manages its own tracking lifecycle
 // NewTrackingConnection creates a connection that manages its own tracking lifecycle
 func NewTrackingConnection(conn net.Conn, trackedConn interfaces.Connection,
 	manager interfaces.ConnectionManager) *TrackingConnection {
@@ -34,10 +49,19 @@ func NewTrackingConnection(conn net.Conn, trackedConn interfaces.Connection,
 	}
 
 	// Register this connection with the global registry
-	connectionRegistry.RegisterConnection(conn, trackedConn.GetID())
+	if connectionRegistry != nil {
+		registryInitLock.Lock()
+		connectionRegistry.RegisterConnection(conn, trackedConn.GetID())
+		registryInitLock.Unlock()
+		fmt.Printf("[UUID-Track-DEBUG] Connection %s registered with registry\n", trackedConn.GetID())
+	} else {
+		fmt.Printf("[UUID-Track-DEBUG] Warning: Connection %s not registered with registry (registry not set)\n", trackedConn.GetID())
+	}
 
 	// Register with the connection manager (but UUID will be set later)
 	manager.AddConnection(trackedConn)
+
+	fmt.Printf("[UUID-Track-DEBUG] Created new tracking connection with ID: %s (Remote addr: %s)\n", trackedConn.GetID(), conn.RemoteAddr().String())
 
 	return tc
 }

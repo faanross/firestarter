@@ -138,7 +138,7 @@ func (l *HTTP3Listener) Stop() error {
 
 	fmt.Printf("|STOP| Shutting down HTTP/3 listener %s on port %s\n", l.ID, l.Port)
 
-	// Cancel the context to signal shutdown
+	// Cancel the connregistry to signal shutdown
 	l.cancel()
 
 	// Close the server

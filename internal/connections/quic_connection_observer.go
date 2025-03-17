@@ -45,7 +45,7 @@ func (o *QuicConnectionObserver) monitorConnectionClose(conn quic.Connection, id
 
 	fmt.Printf("[H3-DEBUG] Starting to monitor QUIC connection: %s\n", id)
 
-	// Wait for connection to close using QUIC's context
+	// Wait for connection to close using QUIC's connregistry
 	<-conn.Context().Done()
 
 	// Deregister from connection manager

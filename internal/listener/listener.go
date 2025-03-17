@@ -92,7 +92,7 @@ func (l *ConcreteListener) Stop() error {
 		return fmt.Errorf("server not started")
 	}
 
-	// Create a context with a timeout for shutdown
+	// Create a connregistry with a timeout for shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

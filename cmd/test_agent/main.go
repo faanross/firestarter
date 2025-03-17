@@ -41,7 +41,7 @@ func main() {
 		test_agent.NewHTTP2ClearAgent("8888"),
 		test_agent.NewHTTP1TLSAgent("9999"),
 		test_agent.NewHTTP2TLSAgent("11111"),
-		test_agent.NewHTTP3Agent("22222"),
+		//test_agent.NewHTTP3Agent("22222"),
 	}
 
 	// Start each agent

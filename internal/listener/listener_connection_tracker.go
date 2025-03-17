@@ -38,7 +38,7 @@ func (ctl *ConnectionTrackingListener) Accept() (net.Conn, error) {
 		return nil, err
 	}
 
-	var managedConn connections.Connection
+	var managedConn interfaces.Connection
 	switch ctl.protocol {
 	case interfaces.H1C:
 		managedConn = connections.NewHTTP1Connection(conn)

@@ -7,6 +7,7 @@ import (
 	"firestarter/internal/factory"
 	"firestarter/internal/interfaces"
 	"firestarter/internal/manager"
+	"firestarter/internal/router"
 	"firestarter/internal/service"
 	"firestarter/internal/websocket"
 	"fmt"
@@ -36,8 +37,15 @@ func main() {
 	// Start our Websocket (:8080) for UI integration
 	websocket.StartWebSocketServer()
 
+	// Initialize connection registry for UUID tracking
+	router.InitializeConnectionRegistry()
+	connections.SetConnectionRegistry(router.GetConnectionRegistry())
+	
 	// Create the components
 	connectionManager := connections.NewConnectionManager()
+	// Connect the registry to the connection manager
+	router.ConnectRegistryToManager(connectionManager)
+
 	abstractFactory := factory.NewAbstractFactory(connectionManager)
 	listenerManager := manager.NewListenerManager()
 	listenerService := service.NewListenerService(abstractFactory, listenerManager, connectionManager)

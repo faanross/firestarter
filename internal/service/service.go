@@ -161,9 +161,9 @@ func (s *ListenerService) GetAllConnections() []interfaces.Connection {
 }
 
 // GetConnectionsByProtocol returns connections filtered by protocol
-func (s *ListenerService) GetConnectionsByProtocol(protocol interfaces.ProtocolType) []connections.Connection {
+func (s *ListenerService) GetConnectionsByProtocol(protocol interfaces.ProtocolType) []interfaces.Connection {
 	allConnections := s.connManager.GetAllConnections()
-	filteredConnections := make([]connections.Connection, 0)
+	filteredConnections := make([]interfaces.Connection, 0)
 
 	for _, conn := range allConnections {
 		if conn.GetProtocol() == protocol {
@@ -189,7 +189,7 @@ func (s *ListenerService) LogConnectionStatus() {
 	protocolCounts := make(map[interfaces.ProtocolType]int)
 
 	fmt.Printf("[CONN-STATUS-DEBUG] Found protocol counts: %v\n", protocolCounts)
-	
+
 	for _, conn := range connections {
 		protocolCounts[conn.GetProtocol()]++
 	}
