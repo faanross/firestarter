@@ -1,12 +1,9 @@
 package connections
 
 import (
-	"firestarter/internal/context"
 	"firestarter/internal/interfaces"
-	"firestarter/internal/router"
 	"fmt"
 	"net"
-	"net/http"
 	"time"
 )
 
@@ -26,7 +23,9 @@ type TrackingConnection struct {
 }
 
 // NewTrackingConnection creates a new connection that manages its own tracking lifecycle
-func NewTrackingConnection(conn net.Conn, trackedConn interfaces.Connection, manager interfaces.ConnectionManager, req *http.Request) *TrackingConnection {
+// NewTrackingConnection creates a connection that manages its own tracking lifecycle
+func NewTrackingConnection(conn net.Conn, trackedConn interfaces.Connection,
+	manager interfaces.ConnectionManager) *TrackingConnection {
 	tc := &TrackingConnection{
 		conn:        conn,
 		manager:     manager,
@@ -34,27 +33,11 @@ func NewTrackingConnection(conn net.Conn, trackedConn interfaces.Connection, man
 		closed:      false,
 	}
 
-	// Extract UUID from request if available
-	if req != nil {
-		agentUUID := router.GetAgentUUIDFromRequest(req)
-		if agentUUID != "" {
-			// Set the UUID in the base connection
-			if baseConn, ok := trackedConn.(*connections.BaseConnection); ok {
-				baseConn.AgentUUID = agentUUID
-			}
+	// Register this connection with the global registry
+	connectionRegistry.RegisterConnection(conn, trackedConn.GetID())
 
-			// Also store in our context mapping as backup
-			context.SetConnectionUUID(trackedConn.GetID(), agentUUID)
-
-			fmt.Printf("Associated connection %s with agent UUID %s\n",
-				trackedConn.GetID(), agentUUID)
-		}
-	}
-
-	// Register this connection with the manager
+	// Register with the connection manager (but UUID will be set later)
 	manager.AddConnection(trackedConn)
-	fmt.Printf("Registered new connection: %s (Protocol: %v)\n",
-		trackedConn.GetID(), trackedConn.GetProtocol())
 
 	return tc
 }
@@ -103,4 +86,13 @@ func (tc *TrackingConnection) SetReadDeadline(t time.Time) error {
 
 func (tc *TrackingConnection) SetWriteDeadline(t time.Time) error {
 	return tc.conn.SetWriteDeadline(t)
+}
+
+// UpdateAgentUUID updates the agent UUID for this connection
+func (tc *TrackingConnection) UpdateAgentUUID(agentUUID string) {
+	// This is a simplification - in real code we'd need to access the underlying
+	// connection and set its AgentUUID field
+	if conn, ok := tc.trackedConn.(interface{ SetAgentUUID(string) }); ok {
+		conn.SetAgentUUID(agentUUID)
+	}
 }

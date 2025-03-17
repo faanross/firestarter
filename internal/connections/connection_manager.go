@@ -123,3 +123,57 @@ func (cm *ConnectionManager) LogStatus() {
 		shown++
 	}
 }
+
+// GetConnectionsByAgentUUID returns connections associated with a specific agent UUID
+func (cm *ConnectionManager) GetConnectionsByAgentUUID(agentUUID string) []interfaces.Connection {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	var results []interfaces.Connection
+	for _, conn := range cm.connections {
+		if conn.GetAgentUUID() == agentUUID {
+			results = append(results, conn)
+		}
+	}
+
+	return results
+}
+
+// CountByAgentUUID returns the number of connections for a specific agent UUID
+func (cm *ConnectionManager) CountByAgentUUID(agentUUID string) int {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	count := 0
+	for _, conn := range cm.connections {
+		if conn.GetAgentUUID() == agentUUID {
+			count++
+		}
+	}
+
+	return count
+}
+
+// GetUniqueAgentUUIDs returns a list of all unique agent UUIDs
+func (cm *ConnectionManager) GetUniqueAgentUUIDs() []string {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	// Use a map to track unique UUIDs
+	uuidMap := make(map[string]bool)
+
+	for _, conn := range cm.connections {
+		uuid := conn.GetAgentUUID()
+		if uuid != "" {
+			uuidMap[uuid] = true
+		}
+	}
+
+	// Convert map keys to slice
+	uuids := make([]string, 0, len(uuidMap))
+	for uuid := range uuidMap {
+		uuids = append(uuids, uuid)
+	}
+
+	return uuids
+}

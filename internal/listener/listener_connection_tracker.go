@@ -5,20 +5,31 @@ import (
 	"firestarter/internal/interfaces"
 	"log"
 	"net"
+	"net/http"
 )
 
 type ConnectionTrackingListener struct {
 	net.Listener
-	connManager interfaces.ConnectionManager
-	protocol    interfaces.ProtocolType
+	connManager      interfaces.ConnectionManager
+	protocol         interfaces.ProtocolType
+	requestExtractor func(*http.Request, net.Conn)
 }
 
+// NewConnectionTrackingListener creates a new tracking listener
 func NewConnectionTrackingListener(l net.Listener, cm interfaces.ConnectionManager, p interfaces.ProtocolType) *ConnectionTrackingListener {
-	return &ConnectionTrackingListener{
+	ctl := &ConnectionTrackingListener{
 		Listener:    l,
 		connManager: cm,
 		protocol:    p,
 	}
+
+	// Add a request extractor function that will be called by HTTP handlers
+	ctl.requestExtractor = func(req *http.Request, conn net.Conn) {
+		// Extract UUID from request and associate it with this connection
+		// This will be implemented in our middleware
+	}
+
+	return ctl
 }
 
 func (ctl *ConnectionTrackingListener) Accept() (net.Conn, error) {
@@ -41,7 +52,7 @@ func (ctl *ConnectionTrackingListener) Accept() (net.Conn, error) {
 		log.Printf("Unsupported protocol type: %v", ctl.protocol)
 		return conn, nil
 	}
-	
+
 	trackingConn := connections.NewTrackingConnection(conn, managedConn, ctl.connManager)
 
 	return trackingConn, nil
