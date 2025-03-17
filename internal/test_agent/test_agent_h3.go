@@ -114,7 +114,7 @@ func (a *HTTP3Agent) RunHealthCheck() error {
 		return fmt.Errorf("connection failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Read response body with limit
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024)) // Limit to first 1KB
 	if err != nil {

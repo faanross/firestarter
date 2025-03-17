@@ -1,9 +1,12 @@
 package connections
 
 import (
+	"firestarter/internal/context"
 	"firestarter/internal/interfaces"
+	"firestarter/internal/router"
 	"fmt"
 	"net"
+	"net/http"
 	"time"
 )
 
@@ -23,12 +26,29 @@ type TrackingConnection struct {
 }
 
 // NewTrackingConnection creates a new connection that manages its own tracking lifecycle
-func NewTrackingConnection(conn net.Conn, trackedConn interfaces.Connection, manager interfaces.ConnectionManager) *TrackingConnection {
+func NewTrackingConnection(conn net.Conn, trackedConn interfaces.Connection, manager interfaces.ConnectionManager, req *http.Request) *TrackingConnection {
 	tc := &TrackingConnection{
 		conn:        conn,
 		manager:     manager,
 		trackedConn: trackedConn,
 		closed:      false,
+	}
+
+	// Extract UUID from request if available
+	if req != nil {
+		agentUUID := router.GetAgentUUIDFromRequest(req)
+		if agentUUID != "" {
+			// Set the UUID in the base connection
+			if baseConn, ok := trackedConn.(*connections.BaseConnection); ok {
+				baseConn.AgentUUID = agentUUID
+			}
+
+			// Also store in our context mapping as backup
+			context.SetConnectionUUID(trackedConn.GetID(), agentUUID)
+
+			fmt.Printf("Associated connection %s with agent UUID %s\n",
+				trackedConn.GetID(), agentUUID)
+		}
 	}
 
 	// Register this connection with the manager

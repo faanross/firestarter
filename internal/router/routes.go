@@ -8,6 +8,10 @@ import (
 
 // SetupRoutes configures all routes for the application
 func SetupRoutes(r chi.Router) {
+
+	// Apply middleware to all routes
+	r.Use(AgentUUIDMiddleware)
+	
 	// Define our root endpoint
 	r.Get("/", RootHandler)
 
