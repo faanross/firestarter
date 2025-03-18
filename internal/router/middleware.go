@@ -72,14 +72,6 @@ func AgentUUIDMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// GetAgentUUIDFromRequest extracts the agent UUID from a request connregistry
-func GetAgentUUIDFromRequest(r *http.Request) string {
-	if uuid, ok := r.Context().Value(AgentUUIDKey).(string); ok {
-		return uuid
-	}
-	return "" // Return empty string if not found
-}
-
 // ConnectRegistryToManager connects the registry to a connection manager
 func ConnectRegistryToManager(manager interfaces.ConnectionManager) {
 	if connectionRegistry != nil {
