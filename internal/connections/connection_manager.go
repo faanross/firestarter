@@ -2,6 +2,7 @@ package connections
 
 import (
 	"firestarter/internal/interfaces"
+	"firestarter/internal/websocket"
 	"fmt"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ type ConnectionManager struct {
 	connectionHistory map[string][]string  // Maps agent UUID to a list of connection IDs
 	connectionTimes   map[string]time.Time // Maps connection ID to creation time
 	mu                sync.RWMutex
+	wsServer          *websocket.WebSocketServer // Allows us to broadcast connections to UI
 }
 
 // NewConnectionManager creates a new ConnectionManager with an initialized connections map
@@ -51,8 +53,22 @@ func (cm *ConnectionManager) AddConnection(conn interfaces.Connection) {
 		id, conn.GetProtocol(), agentUUID, len(cm.connections))
 
 	if agentUUID != "" {
-		fmt.Printf("[UUID-Track-DEBUG] Connection manager: Connection %s has UUID %s on addition\n",
+		fmt.Printf("[UUID-TRACK-DEBUG] Connection manager: Connection %s has UUID %s on addition\n",
 			id, agentUUID)
+	}
+
+	// Broadcast connection created event to WebSocket clients
+	if cm.wsServer != nil {
+		// Convert the connection to UI-friendly format
+		connInfo := websocket.ConvertConnection(conn)
+
+		// Broadcast the event
+		cm.wsServer.Broadcast(websocket.Message{
+			Type:    websocket.ConnectionCreated,
+			Payload: connInfo,
+		})
+
+		fmt.Printf("[WS-DEBUG] Broadcasted ConnectionCreated event for %s\n", id)
 	}
 }
 
@@ -64,6 +80,9 @@ func (cm *ConnectionManager) RemoveConnection(id string) {
 		// The connection still exists in memory, so we can get its UUID
 		agentUUID := conn.GetAgentUUID()
 
+		// Keep a copy of the connection info before removing it
+		connInfo := websocket.ConvertConnection(conn)
+
 		// Remove from active connections
 		delete(cm.connections, id)
 
@@ -72,6 +91,16 @@ func (cm *ConnectionManager) RemoveConnection(id string) {
 
 		fmt.Printf("Connection removed: %s (UUID: %s, Total remaining: %d)\n",
 			id, agentUUID, len(cm.connections))
+
+		// Broadcast connection stopped event to WebSocket clients
+		if cm.wsServer != nil {
+			cm.wsServer.Broadcast(websocket.Message{
+				Type:    websocket.ConnectionStopped,
+				Payload: connInfo,
+			})
+
+			fmt.Printf("[WS-DEBUG] Broadcasted ConnectionStopped event for %s\n", id)
+		}
 	}
 }
 
@@ -104,9 +133,17 @@ func (cm *ConnectionManager) GetConnection(id string) (interfaces.Connection, bo
 	conn, exists := cm.connections[id]
 
 	if exists && conn.GetAgentUUID() != "" {
-		fmt.Printf("[UUID-Track-DEBUG] Connection manager: Retrieved connection %s with UUID %s\n",
+		fmt.Printf("[UUID-de🪲] -> Connection manager: Retrieved connection %s with UUID %s\n",
 			id, conn.GetAgentUUID())
 	}
 
 	return conn, exists
+}
+
+// SetWebSocketServer sets the WebSocket server reference
+func (cm *ConnectionManager) SetWebSocketServer(server *websocket.WebSocketServer) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	cm.wsServer = server
+	fmt.Println("[🔗] -> Connection manager linked to WebSocket server")
 }
