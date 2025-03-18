@@ -101,3 +101,18 @@ func (cr *ConnectionRegistry) GetUUID(connID string) string {
 
 	return cr.uuidMap[connID]
 }
+
+// GetRemoteAddrByConnID retrieves the remote address associated with a connection ID
+func (cr *ConnectionRegistry) GetRemoteAddrByConnID(connID string) string {
+	cr.mutex.RLock()
+	defer cr.mutex.RUnlock()
+
+	// We need to search through the connMap to find the entry where the value is the connID
+	for remoteAddr, id := range cr.connMap {
+		if id == connID {
+			return remoteAddr
+		}
+	}
+
+	return "" // Return empty string if not found
+}

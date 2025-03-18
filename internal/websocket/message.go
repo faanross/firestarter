@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"firestarter/internal/interfaces"
+	"firestarter/internal/router"
 	"firestarter/internal/types"
 	"time"
 )
@@ -50,29 +51,60 @@ type Command struct {
 
 // ConnectionInfo represents the data about a connection that will be sent to UI
 type ConnectionInfo struct {
-	ID         string    `json:"id"`
-	Port       string    `json:"port"`
-	Protocol   string    `json:"protocol"`
-	CreatedAt  time.Time `json:"createdAt"`
-	RemoteAddr string    `json:"remoteAddr"`
-	AgentUUID  string    `json:"agentUUID"`
+	ID         string    `json:"id"`         // Unique identifier for the connection
+	Port       string    `json:"port"`       // Port the connection is using
+	Protocol   string    `json:"protocol"`   // Protocol type (H1C, H1TLS, etc.)
+	CreatedAt  time.Time `json:"createdAt"`  // When the connection was established
+	RemoteAddr string    `json:"remoteAddr"` // Client IP address and port
+	AgentUUID  string    `json:"agentUUID"`  // UUID of the connected agent
 }
 
 // ConvertConnection converts a connection to ConnectionInfo format
 func ConvertConnection(conn interfaces.Connection) ConnectionInfo {
 	return ConnectionInfo{
-		ID:   conn.GetID(),
-		Port: conn.GetPort(),
-		//Protocol:   getProtocolName(conn.GetProtocol()),
+		ID:         conn.GetID(),
+		Port:       conn.GetPort(),
+		Protocol:   getProtocolName(conn.GetProtocol()),
 		CreatedAt:  conn.GetCreatedAt(),
 		RemoteAddr: getRemoteAddrFromConnection(conn),
 		AgentUUID:  conn.GetAgentUUID(),
 	}
 }
 
+// Helper function to get protocol name as a string
+func getProtocolName(protocol interfaces.ProtocolType) string {
+	switch protocol {
+	case interfaces.H1C:
+		return "HTTP/1.1 Clear"
+	case interfaces.H2C:
+		return "HTTP/2 Clear"
+	case interfaces.H1TLS:
+		return "HTTP/1.1 TLS"
+	case interfaces.H2TLS:
+		return "HTTP/2 TLS"
+	case interfaces.H3:
+		return "HTTP/3"
+	default:
+		return "Unknown"
+	}
+}
+
 // Helper function to get remote address if available
 func getRemoteAddrFromConnection(conn interfaces.Connection) string {
-	// This is a placeholder, I will later implement ability to
-	// retrieve the remote address from the connection
+	// Get the registry using the existing getter function
+	registry := router.GetConnectionRegistry()
+
+	if registry != nil {
+		connID := conn.GetID()
+		if remoteAddr := registry.GetRemoteAddrByConnID(connID); remoteAddr != "" {
+			return remoteAddr
+		}
+	}
+
+	// Fallback methods
+	if httpConn, ok := conn.(interface{ GetRemoteAddr() string }); ok {
+		return httpConn.GetRemoteAddr()
+	}
+
 	return "Unknown"
 }
