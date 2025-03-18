@@ -32,3 +32,21 @@ type ConnectionManager interface {
 	Count() int
 	GetConnection(id string) (Connection, bool)
 }
+
+// Helper function to get protocol name
+func GetProtocolName(protocol ProtocolType) string {
+	switch protocol {
+	case H1C:
+		return "HTTP/1.1"
+	case H2C:
+		return "HTTP/2"
+	case H1TLS:
+		return "HTTP/1.1 TLS"
+	case H2TLS:
+		return "HTTP/2 TLS"
+	case H3:
+		return "HTTP/3"
+	default:
+		return "Unknown"
+	}
+}

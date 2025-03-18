@@ -64,28 +64,10 @@ func ConvertConnection(conn interfaces.Connection) ConnectionInfo {
 	return ConnectionInfo{
 		ID:         conn.GetID(),
 		Port:       conn.GetPort(),
-		Protocol:   getProtocolName(conn.GetProtocol()),
+		Protocol:   interfaces.GetProtocolName(conn.GetProtocol()),
 		CreatedAt:  conn.GetCreatedAt(),
 		RemoteAddr: getRemoteAddrFromConnection(conn),
 		AgentUUID:  conn.GetAgentUUID(),
-	}
-}
-
-// Helper function to get protocol name as a string
-func getProtocolName(protocol interfaces.ProtocolType) string {
-	switch protocol {
-	case interfaces.H1C:
-		return "HTTP/1.1 Clear"
-	case interfaces.H2C:
-		return "HTTP/2 Clear"
-	case interfaces.H1TLS:
-		return "HTTP/1.1 TLS"
-	case interfaces.H2TLS:
-		return "HTTP/2 TLS"
-	case interfaces.H3:
-		return "HTTP/3"
-	default:
-		return "Unknown"
 	}
 }
 

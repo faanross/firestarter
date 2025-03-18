@@ -94,14 +94,6 @@ func (cr *ConnectionRegistry) RegisterUUID(req *http.Request, agentUUID string) 
 	}
 }
 
-// GetUUID retrieves the UUID associated with a connection ID
-func (cr *ConnectionRegistry) GetUUID(connID string) string {
-	cr.mutex.RLock()
-	defer cr.mutex.RUnlock()
-
-	return cr.uuidMap[connID]
-}
-
 // GetRemoteAddrByConnID retrieves the remote address associated with a connection ID
 func (cr *ConnectionRegistry) GetRemoteAddrByConnID(connID string) string {
 	cr.mutex.RLock()

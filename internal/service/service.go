@@ -199,7 +199,7 @@ func (s *ListenerService) LogConnectionStatus() {
 	for protocol, count := range protocolCounts {
 		percentage := float64(count) / float64(len(connections)) * 100
 		fmt.Printf("  - %s: %d connections (%.1f%%)\n",
-			getProtocolName(protocol), count, percentage)
+			interfaces.GetProtocolName(protocol), count, percentage)
 	}
 
 	// List a sample of connections
@@ -213,7 +213,7 @@ func (s *ListenerService) LogConnectionStatus() {
 			}
 			fmt.Printf("  - ID: %s, Protocol: %s, Created: %s\n",
 				conn.GetID(),
-				getProtocolName(conn.GetProtocol()),
+				interfaces.GetProtocolName(conn.GetProtocol()),
 				conn.GetCreatedAt().Format(time.RFC3339))
 			shown++
 		}
@@ -240,24 +240,6 @@ func (s *ListenerService) StartConnectionMonitor(interval time.Duration) {
 		}
 	}()
 	fmt.Printf("Connection monitor started (interval: %s)\n", interval)
-}
-
-// Helper function to get protocol name
-func getProtocolName(protocol interfaces.ProtocolType) string {
-	switch protocol {
-	case interfaces.H1C:
-		return "HTTP/1.1"
-	case interfaces.H2C:
-		return "HTTP/2"
-	case interfaces.H1TLS:
-		return "HTTP/1.1 TLS"
-	case interfaces.H2TLS:
-		return "HTTP/2 TLS"
-	case interfaces.H3:
-		return "HTTP/3"
-	default:
-		return "Unknown"
-	}
 }
 
 // ConnectionStats represents statistics about the active connections
@@ -331,7 +313,7 @@ func (s *ListenerService) BroadcastConnectionStatus() {
 	// Convert protocol type keys to strings for JSON
 	byProtocolStr := make(map[string]int)
 	for proto, count := range stats.ConnectionsByProtocol {
-		byProtocolStr[getProtocolName(proto)] = count
+		byProtocolStr[interfaces.GetProtocolName(proto)] = count
 	}
 
 	payload := connectionStatusPayload{
