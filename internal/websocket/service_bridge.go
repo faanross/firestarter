@@ -11,6 +11,7 @@ type ServiceBridge interface {
 	StopListener(id string) error
 	GetAllConnections() []interfaces.Connection
 	GetConnectionCount() int
+	StopConnection(id string) error
 }
 
 // Global service bridge instance

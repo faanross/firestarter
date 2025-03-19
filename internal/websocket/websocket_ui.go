@@ -219,6 +219,37 @@ func (s *WebSocketServer) processClientMessage(conn *websocket.Conn, rawMessage 
 		} else {
 			log.Printf("Listener %s stopped successfully", id)
 		}
+	case "get_connections":
+		// Send a snapshot of all connections
+		s.SendConnectionsSnapshot(conn)
+
+	case "stop_connection":
+		// Extract the connection ID from the payload
+		payloadMap, ok := cmd.Payload.(map[string]interface{})
+		if !ok {
+			log.Println("Invalid payload format for stop_connection command")
+			return
+		}
+
+		idValue, exists := payloadMap["id"]
+		if !exists {
+			log.Println("Missing 'id' in stop_connection payload")
+			return
+		}
+
+		id, ok := idValue.(string)
+		if !ok {
+			log.Println("Connection ID must be a string")
+			return
+		}
+
+		// Stop the connection using the service bridge
+		err := bridge.StopConnection(id)
+		if err != nil {
+			log.Printf("Error stopping connection %s: %v", id, err)
+		} else {
+			log.Printf("Connection %s stopped successfully", id)
+		}
 
 	default:
 		log.Printf("Unknown command: %s", cmd.Action)

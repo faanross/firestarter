@@ -4,6 +4,7 @@ import (
 	"firestarter/internal/interfaces"
 	"firestarter/internal/types"
 	"firestarter/internal/websocket"
+	"fmt"
 )
 
 // ConnectToWebSocket registers this service with the WebSocket server
@@ -38,4 +39,28 @@ func (a *websocketAdapter) GetAllConnections() []interfaces.Connection {
 // GetConnectionCount implements ServiceBridge.GetConnectionCount
 func (a *websocketAdapter) GetConnectionCount() int {
 	return a.service.GetConnectionCount()
+}
+
+// StopConnection implements ServiceBridge.StopConnection
+func (a *websocketAdapter) StopConnection(id string) error {
+	// Find the connection in the connection manager
+	conn, found := a.service.GetConnectionManager().GetConnection(id)
+	if !found {
+		return fmt.Errorf("no connection found with ID %s", id)
+	}
+
+	// Log the termination request
+	fmt.Printf("Request to terminate connection %s (Protocol: %v, Agent: %s)\n",
+		id, conn.GetProtocol(), conn.GetAgentUUID())
+
+	// Close the connection
+	err := conn.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close connection %s: %w", id, err)
+	}
+
+	// Explicitly remove from connection manager to ensure proper cleanup
+	a.service.GetConnectionManager().RemoveConnection(id)
+
+	return nil
 }
