@@ -3,13 +3,8 @@ package main
 
 import (
 	"bufio"
-	"firestarter/internal/connections"
-	"firestarter/internal/factory"
 	"firestarter/internal/interfaces"
-	"firestarter/internal/manager"
-	"firestarter/internal/router"
 	"firestarter/internal/service"
-	"firestarter/internal/websocket"
 	"fmt"
 	"os"
 	"os/signal"
@@ -33,31 +28,8 @@ func main() {
 	// Setup signal channel for graceful shutdown
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-
-	// Start our Websocket (:8080) for UI integration
-	websocket.StartWebSocketServer()
-
-	// Initialize connection registry for UUID tracking
-	router.InitializeConnectionRegistry()
-	connections.SetConnectionRegistry(router.GetConnectionRegistry())
-
-	// Create the components
-	connectionManager := connections.NewConnectionManager()
-	// Connect the registry to the connection manager
-	router.ConnectRegistryToManager(connectionManager)
-
-	// Link the Connection Manager to the WebSocket server
-	wsServer := websocket.GetGlobalWSServer()
-	if wsServer != nil {
-		connectionManager.SetWebSocketServer(wsServer)
-		fmt.Println("[INIT] WebSocket server linked to Connection Manager")
-	} else {
-		fmt.Println("[INIT-ERROR] WebSocket server not available for Connection Manager!")
-	}
-
-	abstractFactory := factory.NewAbstractFactory(connectionManager)
-	listenerManager := manager.NewListenerManager()
-	listenerService := service.NewListenerService(abstractFactory, listenerManager, connectionManager)
+	
+	listenerManager, listenerService := ApplicationSetup()
 
 	// ConnectToWebSocket allows our service and websocket to communicate with one another
 	listenerService.ConnectToWebSocket()
@@ -90,7 +62,7 @@ func main() {
 		listenerManager.Count())
 
 	// Add connection tracking test
-	TestConnectionTracking(listenerService)
+	service.ConnectionTrackingUpdate(listenerService)
 
 	// Block until we receive a termination signal
 	sig := <-signalChan
@@ -110,29 +82,4 @@ func PressAnyKey() {
 
 	// Optional: Clean any leftover newline characters
 	fmt.Println() // Add a newline after input for cleaner output
-}
-
-// TestConnectionTracking performs manual verification of connection tracking
-func TestConnectionTracking(listenerService *service.ListenerService) {
-	// Print initial status
-	fmt.Println("\n==== CONNECTION TRACKING TEST ====")
-	fmt.Println("Initial state (should be 0 connections):")
-	listenerService.LogConnectionStatus()
-
-	// Start a monitoring goroutine
-	go func() {
-		for {
-			time.Sleep(5 * time.Second)
-			count := listenerService.GetConnectionCount()
-			fmt.Printf("\n[%s] Connection monitor: %d active connections\n",
-				time.Now().Format(time.RFC3339), count)
-			if count > 0 {
-				listenerService.LogConnectionStatus()
-			}
-		}
-	}()
-
-	fmt.Println("\nConnection tracking test initialized.")
-	fmt.Println("Please make HTTP requests to test endpoints to verify tracking.")
-	fmt.Println("====================================")
 }
