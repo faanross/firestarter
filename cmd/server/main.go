@@ -40,11 +40,20 @@ func main() {
 	// Initialize connection registry for UUID tracking
 	router.InitializeConnectionRegistry()
 	connections.SetConnectionRegistry(router.GetConnectionRegistry())
-	
+
 	// Create the components
 	connectionManager := connections.NewConnectionManager()
 	// Connect the registry to the connection manager
 	router.ConnectRegistryToManager(connectionManager)
+
+	// Link the Connection Manager to the WebSocket server
+	wsServer := websocket.GetGlobalWSServer()
+	if wsServer != nil {
+		connectionManager.SetWebSocketServer(wsServer)
+		fmt.Println("[INIT] WebSocket server linked to Connection Manager")
+	} else {
+		fmt.Println("[INIT-ERROR] WebSocket server not available for Connection Manager!")
+	}
 
 	abstractFactory := factory.NewAbstractFactory(connectionManager)
 	listenerManager := manager.NewListenerManager()

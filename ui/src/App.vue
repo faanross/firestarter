@@ -15,7 +15,7 @@
         </template>
 
         <template #tab2>
-          <p>This will contain info on our active connections.</p>
+          <ConnectionsTable :socket="sharedSocket" />
         </template>
       </TabsComponent>
     </div>
@@ -27,6 +27,7 @@ import { ref } from 'vue';
 import ListenersTable from './components/ListenersTable.vue';
 import WebSocketConnection from './components/WebSocketConnection.vue';
 import TabsComponent from './components/TabsComponent.vue';
+import ConnectionsTable from './components/ConnectionsTable.vue';
 
 // Define reactive data directly at the top level
 const tabs = [
