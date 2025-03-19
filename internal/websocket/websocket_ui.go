@@ -85,6 +85,9 @@ func (s *WebSocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request
 	// Send a snapshot of all current listeners
 	s.SendListenersSnapshot(conn)
 
+	// Send a snapshot of all current connections
+	s.SendConnectionsSnapshot(conn)
+
 	// Clean up on disconnect
 	defer func() {
 		conn.Close()
@@ -251,5 +254,37 @@ func (s *WebSocketServer) SendListenersSnapshot(conn *websocket.Conn) {
 		log.Printf("Error sending listeners snapshot: %v", err)
 	} else {
 		log.Printf("Sent snapshot with %d listeners", len(listeners))
+	}
+}
+
+// SendConnectionsSnapshot sends a snapshot of all current connections to a client
+func (s *WebSocketServer) SendConnectionsSnapshot(conn *websocket.Conn) {
+	// Check if we have access to the service
+	bridge := GetServiceBridge()
+	if bridge == nil {
+		log.Println("Cannot send connection snapshot: service bridge not available")
+		return
+	}
+
+	// Get all connections from the service
+	connections := bridge.GetAllConnections()
+
+	// Convert connections to info objects
+	connectionInfos := make([]ConnectionInfo, 0, len(connections))
+	for _, connection := range connections {
+		connectionInfos = append(connectionInfos, ConvertConnection(connection))
+	}
+
+	// Create and send the snapshot message
+	snapshotMsg := Message{
+		Type:    ConnectionsSnapshot,
+		Payload: connectionInfos,
+	}
+
+	err := s.sendMessage(conn, snapshotMsg)
+	if err != nil {
+		log.Printf("Error sending connections snapshot: %v", err)
+	} else {
+		log.Printf("Sent snapshot with %d connections", len(connections))
 	}
 }
