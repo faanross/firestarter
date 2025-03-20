@@ -52,7 +52,7 @@ func (l *ConcreteListener) Start() error {
 	}
 
 	// Wrap with our connection tracking listener
-	trackingListener := NewConnectionTrackingListener(tcpListener, l.connManager, l.Protocol)
+	trackingListener := NewConnectionTrackingListener(tcpListener, l.connManager, l.Protocol, l.Port)
 
 	// If server isn't already set, create it
 	if l.server == nil {

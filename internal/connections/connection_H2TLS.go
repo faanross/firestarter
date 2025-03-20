@@ -13,11 +13,12 @@ type HTTP2TLSConnection struct {
 }
 
 // NewHTTP2TLSConnection creates a new HTTP/2 TLS connection
-func NewHTTP2TLSConnection(conn net.Conn) *HTTP2TLSConnection {
+func NewHTTP2TLSConnection(conn net.Conn, port string) *HTTP2TLSConnection {
 	return &HTTP2TLSConnection{
 		BaseConnection: BaseConnection{
 			ID:        GenerateUniqueID(),
 			Protocol:  interfaces.H2TLS,
+			Port:      port,
 			CreatedAt: time.Now().UTC(),
 		},
 		Conn: conn,

@@ -14,11 +14,12 @@ type HTTP3Connection struct {
 }
 
 // NewHTTP3Connection creates a new HTTP/3 connection
-func NewHTTP3Connection(conn quic.Connection) *HTTP3Connection {
+func NewHTTP3Connection(conn quic.Connection, port string) *HTTP3Connection {
 	return &HTTP3Connection{
 		BaseConnection: BaseConnection{
 			ID:        GenerateUniqueID(),
 			Protocol:  interfaces.H3,
+			Port:      port,
 			CreatedAt: time.Now().UTC(),
 		},
 		QUICConn: conn,

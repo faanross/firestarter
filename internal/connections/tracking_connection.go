@@ -19,7 +19,8 @@ var connectionRegistry *connregistry.ConnectionRegistry
 func SetConnectionRegistry(registry *connregistry.ConnectionRegistry) {
 	if registry != nil {
 		connectionRegistry = registry
-		fmt.Printf("[UUID-Track-DEBUG] Connection tracking system linked to registry\n")
+		fmt.Println("[🔗LNK] -> Connection Tracking System linked to Global Registry.")
+
 	}
 }
 

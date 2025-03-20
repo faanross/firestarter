@@ -13,12 +13,13 @@ type HTTP1TLSConnection struct {
 }
 
 // NewHTTP1TLSConnection creates a new HTTP/1.1 TLS connection
-func NewHTTP1TLSConnection(conn net.Conn) *HTTP1TLSConnection {
+func NewHTTP1TLSConnection(conn net.Conn, port string) *HTTP1TLSConnection {
 	return &HTTP1TLSConnection{
 		BaseConnection: BaseConnection{
 			ID:        GenerateUniqueID(),
 			Protocol:  interfaces.H1TLS,
 			CreatedAt: time.Now().UTC(),
+			Port:      port,
 		},
 		Conn: conn,
 	}

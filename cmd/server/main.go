@@ -7,7 +7,6 @@ import (
 	"firestarter/internal/factory"
 	"firestarter/internal/interfaces"
 	"firestarter/internal/manager"
-	"firestarter/internal/router"
 	"firestarter/internal/service"
 	"firestarter/internal/websocket"
 	"fmt"
@@ -89,17 +88,11 @@ func PressAnyKey() {
 }
 
 func ApplicationSetup() (*manager.ListenerManager, *service.ListenerService) {
-	// Start our Websocket (:8080) for UI integration
+	// Start our Websocket Server for UI integration
 	websocket.StartWebSocketServer(WebSocketPort)
 
-	// Initialize connection registry for UUID tracking
-	connregistry.InitializeConnectionRegistry()
-	connections.SetConnectionRegistry(connregistry.GetConnectionRegistry())
-
-	// Create the components
+	// Create Connection Manager
 	connectionManager := connections.NewConnectionManager()
-	// Connect the registry to the connection manager
-	router.ConnectRegistryToManager(connectionManager)
 
 	// Link the Connection Manager to the WebSocket server
 	wsServer := websocket.GetGlobalWSServer()
@@ -109,6 +102,13 @@ func ApplicationSetup() (*manager.ListenerManager, *service.ListenerService) {
 	} else {
 		fmt.Println("[INIT-ERROR] WebSocket server not available for Connection Manager!")
 	}
+
+	// Initialize connection registry for UUID tracking
+	connregistry.InitializeConnectionRegistry()
+	connections.SetConnectionRegistry(connregistry.GetConnectionRegistry())
+
+	// Connect the registry to the connection manager
+	connregistry.ConnectRegistryToManager(connectionManager)
 
 	af := factory.NewAbstractFactory(connectionManager)
 	lm := manager.NewListenerManager()

@@ -4,14 +4,12 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// In router/routes_kavqmwsu.go
-
 // SetupRoutes configures all routes for the application
 func SetupRoutes(r chi.Router) {
 
 	// Apply middleware to all routes
-	r.Use(AgentUUIDMiddleware)
-	
+	r.Use(AgentUUIDHeaderMiddleware)
+
 	// Define our root endpoint
 	r.Get("/", RootHandler)
 

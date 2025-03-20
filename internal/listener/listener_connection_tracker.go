@@ -12,15 +12,17 @@ type ConnectionTrackingListener struct {
 	net.Listener
 	connManager      interfaces.ConnectionManager
 	protocol         interfaces.ProtocolType
+	port             string
 	requestExtractor func(*http.Request, net.Conn)
 }
 
 // NewConnectionTrackingListener creates a new tracking listener
-func NewConnectionTrackingListener(l net.Listener, cm interfaces.ConnectionManager, p interfaces.ProtocolType) *ConnectionTrackingListener {
+func NewConnectionTrackingListener(l net.Listener, cm interfaces.ConnectionManager, p interfaces.ProtocolType, port string) *ConnectionTrackingListener {
 	ctl := &ConnectionTrackingListener{
 		Listener:    l,
 		connManager: cm,
 		protocol:    p,
+		port:        port,
 	}
 
 	// Add a request extractor function that will be called by HTTP handlers
@@ -41,13 +43,13 @@ func (ctl *ConnectionTrackingListener) Accept() (net.Conn, error) {
 	var managedConn interfaces.Connection
 	switch ctl.protocol {
 	case interfaces.H1C:
-		managedConn = connections.NewHTTP1Connection(conn)
+		managedConn = connections.NewHTTP1Connection(conn, ctl.port)
 	case interfaces.H2C:
-		managedConn = connections.NewHTTP2Connection(conn)
+		managedConn = connections.NewHTTP2Connection(conn, ctl.port)
 	case interfaces.H1TLS:
-		managedConn = connections.NewHTTP1TLSConnection(conn)
+		managedConn = connections.NewHTTP1TLSConnection(conn, ctl.port)
 	case interfaces.H2TLS:
-		managedConn = connections.NewHTTP2TLSConnection(conn)
+		managedConn = connections.NewHTTP2TLSConnection(conn, ctl.port)
 	default:
 		log.Printf("Unsupported protocol type: %v", ctl.protocol)
 		return conn, nil

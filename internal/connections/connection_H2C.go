@@ -12,11 +12,12 @@ type HTTP2Connection struct {
 	Conn net.Conn
 }
 
-func NewHTTP2Connection(conn net.Conn) *HTTP2Connection {
+func NewHTTP2Connection(conn net.Conn, port string) *HTTP2Connection {
 	return &HTTP2Connection{
 		BaseConnection: BaseConnection{
 			ID:        GenerateUniqueID(),
 			Protocol:  interfaces.H2C,
+			Port:      port,
 			CreatedAt: time.Now().UTC(),
 		},
 		Conn: conn,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
+	"net"
 	"net/http"
 	"sync"
 )
@@ -50,8 +51,16 @@ func (s *EnhancedHTTP3Server) ServeQUICConn(conn quic.Connection) error {
 		s.Server.Handler.ServeHTTP(w, r)
 	})
 
-	// Notify our observer about the new connection
-	s.observer.OnConnectionEstablished(conn)
+	// Get port from listening address
+	port := "unknown"
+	if s.Server.Addr != "" {
+		_, portStr, _ := net.SplitHostPort(s.Server.Addr)
+		if portStr != "" {
+			port = portStr
+		}
+	}
+
+	s.observer.OnConnectionEstablished(conn, port)
 
 	fmt.Printf("[H3-SERVER-DEBUG] Observer notified, continuing with standard HTTP/3 handling\n")
 

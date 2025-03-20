@@ -35,7 +35,7 @@ func (cr *ConnectionRegistry) SetConnectionManager(cm interfaces.ConnectionManag
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 	cr.connManager = cm
-	fmt.Println("Connection registry linked to connection manager")
+	fmt.Println("[🔗LNK] -> Connection registry linked to connection manager.")
 }
 
 // RegisterConnection associates a TCP connection with a connection ID
@@ -115,7 +115,7 @@ func (cr *ConnectionRegistry) GetRemoteAddrByConnID(connID string) string {
 // InitializeConnectionRegistry creates and sets up the global connection registry
 func InitializeConnectionRegistry() {
 	if GlobalConnectionRegistry == nil {
-		fmt.Println("Initializing global connection registry")
+		fmt.Printf("\n=======>🌎INIT GLOBAL CONNECTION REGISTRY🌎<=======\n")
 		GlobalConnectionRegistry = NewConnectionRegistry()
 	}
 }
@@ -123,4 +123,13 @@ func InitializeConnectionRegistry() {
 // GetConnectionRegistry returns the global connection registry
 func GetConnectionRegistry() *ConnectionRegistry {
 	return GlobalConnectionRegistry
+}
+
+// ConnectRegistryToManager connects the registry to a connection manager
+func ConnectRegistryToManager(manager interfaces.ConnectionManager) {
+	if GlobalConnectionRegistry != nil {
+		GlobalConnectionRegistry.SetConnectionManager(manager)
+	} else {
+		fmt.Println("[❌ERR] -> Cannot connect registry to manager - registry not initialized")
+	}
 }

@@ -3,7 +3,6 @@ package router
 import (
 	"context"
 	"firestarter/internal/connregistry"
-	"firestarter/internal/interfaces"
 	"fmt"
 	"net/http"
 	"sync"
@@ -23,12 +22,12 @@ const (
 	AgentUUIDKey contextKey = "agent-uuid"
 )
 
-// AgentUUIDMiddleware extracts the agent UUID from request headers
-func AgentUUIDMiddleware(next http.Handler) http.Handler {
+// AgentUUIDHeaderMiddleware extracts the agent UUID from request headers
+func AgentUUIDHeaderMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract UUID from header
 		agentUUID := r.Header.Get("X-Agent-UUID")
-
+		
 		// Log the extraction
 		if agentUUID != "" {
 			// Generate a unique key for this connection+UUID combination
@@ -59,13 +58,4 @@ func AgentUUIDMiddleware(next http.Handler) http.Handler {
 		// Call the next handler with the updated connregistry
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-// ConnectRegistryToManager connects the registry to a connection manager
-func ConnectRegistryToManager(manager interfaces.ConnectionManager) {
-	if connregistry.GlobalConnectionRegistry != nil {
-		connregistry.GlobalConnectionRegistry.SetConnectionManager(manager)
-	} else {
-		fmt.Println("Warning: Cannot connect registry to manager - registry not initialized")
-	}
 }

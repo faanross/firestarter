@@ -20,12 +20,12 @@ func NewQuicConnectionObserver(connManager interfaces.ConnectionManager) *QuicCo
 }
 
 // OnConnectionEstablished is called when a new QUIC connection is established
-func (o *QuicConnectionObserver) OnConnectionEstablished(conn quic.Connection) {
+func (o *QuicConnectionObserver) OnConnectionEstablished(conn quic.Connection, port string) {
 
 	fmt.Printf("[H3-DEBUG] OnConnectionEstablished called for QUIC connection from: %s\n", conn.RemoteAddr().String())
 
 	// Create a tracked connection object
-	trackedConn := NewHTTP3Connection(conn)
+	trackedConn := NewHTTP3Connection(conn, port)
 
 	fmt.Printf("[H3-OBSERVER-DEBUG] Created HTTP3Connection with ID: %s for protocol: %v\n", trackedConn.GetID(), trackedConn.GetProtocol())
 

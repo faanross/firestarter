@@ -12,11 +12,12 @@ type HTTP1Connection struct {
 	Conn net.Conn
 }
 
-func NewHTTP1Connection(conn net.Conn) *HTTP1Connection {
+func NewHTTP1Connection(conn net.Conn, port string) *HTTP1Connection {
 	return &HTTP1Connection{
 		BaseConnection: BaseConnection{
 			ID:        GenerateUniqueID(),
 			Protocol:  interfaces.H1C,
+			Port:      port,
 			CreatedAt: time.Now().UTC(),
 		},
 		Conn: conn,
