@@ -36,9 +36,7 @@ const connectWebSocket = () => {
 
     // Emit the socket to parent component
     emits('socket-ready', socket.value);
-
-    // Send a message to the server
-    socket.value.send('Hello from Vue client!');
+    
   });
 
   // Connection closed

@@ -146,5 +146,5 @@ func (cm *ConnectionManager) SetWebSocketServer(server *websocket.SocketServer) 
 	defer cm.mu.Unlock()
 	cm.wsServer = server
 	fmt.Println("[🔗LNK] -> Connection Manager linked to WebSocket server.")
-	fmt.Printf("=======================================================\n")
+	fmt.Printf("============================================================\n")
 }

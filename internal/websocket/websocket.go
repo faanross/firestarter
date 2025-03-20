@@ -42,7 +42,7 @@ func NewWebSocketServer(port int) *SocketServer {
 
 // StartWebSocketServer initializes and starts the WebSocket server
 func StartWebSocketServer(wsp int) {
-	fmt.Printf("\n=============>🔧CREATING WEBSOCKET SERVER🔧<=============\n")
+	fmt.Printf("\n==============>🔧CREATING WEBSOCKET SERVER🔧<==============\n")
 
 	// Create and store global instance
 	GlobalWSServer = NewWebSocketServer(wsp)
@@ -57,7 +57,7 @@ func StartWebSocketServer(wsp int) {
 	// Give the WebSocket server a moment to start
 	time.Sleep(100 * time.Millisecond)
 	fmt.Printf("[🔧WS] -> WebSocket server is running on :%d.\n", wsp)
-	fmt.Println("[🖥️UI] -> You can now connect from the web UI.")
+	fmt.Println("[🖥️UI] -> You can now connect from the Web UI.")
 
 }
 
@@ -75,12 +75,13 @@ func (s *SocketServer) Start() error {
 	return http.ListenAndServe(addr, nil)
 }
 
-// handleWebSocket handles WebSocket connection
+// handleWebSocket handler that manages the full lifecycle of a client connection
 func (s *SocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Upgrade HTTP connection to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
+
 	if err != nil {
-		log.Printf("Failed to upgrade connection to WebSocket: %v", err)
+		log.Printf("[❌ERR] -> Failed to upgrade connection to WebSocket: %v.", err)
 		return
 	}
 
@@ -89,24 +90,7 @@ func (s *SocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	s.clients[conn] = true
 	s.mu.Unlock()
 
-	fmt.Println("New WebSocket connection established")
-
-	// Send a welcome message
-	welcomeMsg := Message{
-		Type:    "welcome",
-		Payload: "Connected to FirestarterC2 WebSocket Server",
-	}
-
-	err = s.sendMessage(conn, welcomeMsg)
-	if err != nil {
-		log.Printf("Error sending welcome message: %v", err)
-	}
-
-	// Send a snapshot of all current listeners
-	s.SendListenersSnapshot(conn)
-
-	// Send a snapshot of all current connections
-	s.SendConnectionsSnapshot(conn)
+	fmt.Println("[🔧WS] -> WebSocket connection established.")
 
 	// Clean up on disconnect
 	defer func() {
@@ -114,7 +98,7 @@ func (s *SocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
 		delete(s.clients, conn)
 		s.mu.Unlock()
-		fmt.Println("WebSocket connection closed")
+		fmt.Println("[🔧WS] -> WebSocket connection closed.")
 	}()
 
 	// Simple message reading loop
@@ -122,13 +106,10 @@ func (s *SocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Error reading message: %v", err)
+				log.Printf("[❌ERR] -> Error reading message: %v", err)
 			}
 			break
 		}
-
-		// Log the received message
-		log.Printf("Received message: %s", message)
 
 		// Process incoming message from ui as a command
 		s.processClientMessage(conn, message)

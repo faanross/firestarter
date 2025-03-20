@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 )
@@ -10,7 +11,7 @@ func (s *SocketServer) SendListenersSnapshot(conn *websocket.Conn) {
 	// Check if we have access to the service
 	bridge := GetServiceBridge()
 	if bridge == nil {
-		log.Println("Cannot send snapshot: service bridge not available")
+		log.Println("[❌ERR] -> Cannot send snapshot: service bridge not available.")
 		return
 	}
 
@@ -31,9 +32,9 @@ func (s *SocketServer) SendListenersSnapshot(conn *websocket.Conn) {
 
 	err := s.sendMessage(conn, snapshotMsg)
 	if err != nil {
-		log.Printf("Error sending listeners snapshot: %v", err)
+		log.Printf("[❌ERR] -> Error sending listeners snapshot: %v.", err)
 	} else {
-		log.Printf("Sent snapshot with %d listeners", len(listeners))
+		fmt.Printf("[📷SNP] -> Sent snapshot with %d listeners.\n", len(listeners))
 	}
 }
 
@@ -42,7 +43,7 @@ func (s *SocketServer) SendConnectionsSnapshot(conn *websocket.Conn) {
 	// Check if we have access to the service
 	bridge := GetServiceBridge()
 	if bridge == nil {
-		log.Println("Cannot send connection snapshot: service bridge not available")
+		log.Println("[❌ERR] -> Cannot send connection snapshot: service bridge not available.")
 		return
 	}
 
@@ -63,8 +64,8 @@ func (s *SocketServer) SendConnectionsSnapshot(conn *websocket.Conn) {
 
 	err := s.sendMessage(conn, snapshotMsg)
 	if err != nil {
-		log.Printf("Error sending connections snapshot: %v", err)
+		log.Printf("[❌ERR] -> Error sending connections snapshot: %v.", err)
 	} else {
-		log.Printf("Sent snapshot with %d connections", len(connections))
+		fmt.Printf("[📷SNP] -> Sent snapshot with %d connections.\n", len(connections))
 	}
 }
