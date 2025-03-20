@@ -1,10 +1,15 @@
-// cmd/server/main.go
 package main
 
 import (
 	"bufio"
+	"firestarter/internal/connections"
+	"firestarter/internal/connregistry"
+	"firestarter/internal/factory"
 	"firestarter/internal/interfaces"
+	"firestarter/internal/manager"
+	"firestarter/internal/router"
 	"firestarter/internal/service"
+	"firestarter/internal/websocket"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,6 +17,8 @@ import (
 	"syscall"
 	"time"
 )
+
+var WebSocketPort = 8080
 
 var listenerConfigs = []struct {
 	Port     string
@@ -25,14 +32,12 @@ var listenerConfigs = []struct {
 }
 
 func main() {
-	// Setup signal channel for graceful shutdown
+	// Setup channel for SIGINT shutdown signal
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-	
-	listenerManager, listenerService := ApplicationSetup()
 
-	// ConnectToWebSocket allows our service and websocket to communicate with one another
-	listenerService.ConnectToWebSocket()
+	// Setup all major server components + services
+	listenerManager, listenerService := ApplicationSetup()
 
 	// Wait group for synchronization
 	var wg sync.WaitGroup
@@ -41,7 +46,7 @@ func main() {
 
 	// Create and start listeners based on configurations
 	for _, config := range listenerConfigs {
-		time.Sleep(1 * time.Second)
+		time.Sleep(300 * time.Millisecond)
 
 		// Use the service to create and start the listener
 		_, err := listenerService.CreateAndStartListener(
@@ -66,6 +71,7 @@ func main() {
 
 	// Block until we receive a termination signal
 	sig := <-signalChan
+
 	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
 
 	// Use the service to stop all listeners
@@ -80,6 +86,37 @@ func PressAnyKey() {
 	reader := bufio.NewReader(os.Stdin)
 	_, _ = reader.ReadString('\n')
 
-	// Optional: Clean any leftover newline characters
-	fmt.Println() // Add a newline after input for cleaner output
+}
+
+func ApplicationSetup() (*manager.ListenerManager, *service.ListenerService) {
+	// Start our Websocket (:8080) for UI integration
+	websocket.StartWebSocketServer(WebSocketPort)
+
+	// Initialize connection registry for UUID tracking
+	connregistry.InitializeConnectionRegistry()
+	connections.SetConnectionRegistry(connregistry.GetConnectionRegistry())
+
+	// Create the components
+	connectionManager := connections.NewConnectionManager()
+	// Connect the registry to the connection manager
+	router.ConnectRegistryToManager(connectionManager)
+
+	// Link the Connection Manager to the WebSocket server
+	wsServer := websocket.GetGlobalWSServer()
+	if wsServer != nil {
+		connectionManager.SetWebSocketServer(wsServer)
+
+	} else {
+		fmt.Println("[INIT-ERROR] WebSocket server not available for Connection Manager!")
+	}
+
+	af := factory.NewAbstractFactory(connectionManager)
+	lm := manager.NewListenerManager()
+	ls := service.NewListenerService(af, lm, connectionManager)
+
+	// ConnectToWebSocket allows our service and websocket to communicate with one another
+	ls.ConnectToWebSocket()
+
+	return lm, ls
+
 }

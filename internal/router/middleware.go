@@ -9,22 +9,11 @@ import (
 	"sync"
 )
 
-// Global connection registry instance
-var connectionRegistry *connregistry.ConnectionRegistry
-
 var (
 	// Track which UUIDs we've already logged for each connection
 	processedUUIDs    = make(map[string]bool)
 	processedUUIDsMux sync.RWMutex
 )
-
-// InitializeConnectionRegistry creates and sets up the global connection registry
-func InitializeConnectionRegistry() {
-	if connectionRegistry == nil {
-		fmt.Println("Initializing global connection registry")
-		connectionRegistry = connregistry.NewConnectionRegistry()
-	}
-}
 
 // Key type for connregistry values
 type contextKey string
@@ -63,8 +52,8 @@ func AgentUUIDMiddleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), AgentUUIDKey, agentUUID)
 
 		// Look up the connection from our registry
-		if agentUUID != "" && connectionRegistry != nil {
-			connectionRegistry.RegisterUUID(r, agentUUID)
+		if agentUUID != "" && connregistry.GlobalConnectionRegistry != nil {
+			connregistry.GlobalConnectionRegistry.RegisterUUID(r, agentUUID)
 		}
 
 		// Call the next handler with the updated connregistry
@@ -74,14 +63,9 @@ func AgentUUIDMiddleware(next http.Handler) http.Handler {
 
 // ConnectRegistryToManager connects the registry to a connection manager
 func ConnectRegistryToManager(manager interfaces.ConnectionManager) {
-	if connectionRegistry != nil {
-		connectionRegistry.SetConnectionManager(manager)
+	if connregistry.GlobalConnectionRegistry != nil {
+		connregistry.GlobalConnectionRegistry.SetConnectionManager(manager)
 	} else {
 		fmt.Println("Warning: Cannot connect registry to manager - registry not initialized")
 	}
-}
-
-// GetConnectionRegistry returns the global connection registry
-func GetConnectionRegistry() *connregistry.ConnectionRegistry {
-	return connectionRegistry
 }

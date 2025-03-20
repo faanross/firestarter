@@ -8,6 +8,9 @@ import (
 	"sync"
 )
 
+// Global connection registry instance
+var GlobalConnectionRegistry *ConnectionRegistry
+
 // ConnectionRegistry maps between HTTP requests and their underlying TCP connections
 type ConnectionRegistry struct {
 	connMap        map[string]string            // Map from TCP connection remote address to connection ID
@@ -107,4 +110,17 @@ func (cr *ConnectionRegistry) GetRemoteAddrByConnID(connID string) string {
 	}
 
 	return "" // Return empty string if not found
+}
+
+// InitializeConnectionRegistry creates and sets up the global connection registry
+func InitializeConnectionRegistry() {
+	if GlobalConnectionRegistry == nil {
+		fmt.Println("Initializing global connection registry")
+		GlobalConnectionRegistry = NewConnectionRegistry()
+	}
+}
+
+// GetConnectionRegistry returns the global connection registry
+func GetConnectionRegistry() *ConnectionRegistry {
+	return GlobalConnectionRegistry
 }

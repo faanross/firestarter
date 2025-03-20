@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-var WebSocketPort = 8080
-
 var upgrader = websocket.Upgrader{
 	// Allow connection from any origin for development
 	CheckOrigin: func(r *http.Request) bool {
@@ -19,44 +17,65 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// WebSocketServer represents a WebSocket server that manages client connection
-type WebSocketServer struct {
+// SocketServer represents a WebSocket server that manages client connection
+type SocketServer struct {
 	port    int
 	clients map[*websocket.Conn]bool
-	mu      sync.Mutex // For thread safety when accessing clients
+	mu      sync.Mutex
 }
 
-// Global instance of WebSocketServer to be accessed from other packages
-var GlobalWSServer *WebSocketServer
+// GlobalWSServer is our global Singleton instance of SocketServer
+var GlobalWSServer *SocketServer
 
-// GetGlobalWSServer returns the global WebSocket server instance
-func GetGlobalWSServer() *WebSocketServer {
+// GetGlobalWSServer is the getter function for SocketServer
+func GetGlobalWSServer() *SocketServer {
 	return GlobalWSServer
 }
 
 // NewWebSocketServer creates a new WebSocket server
-func NewWebSocketServer(port int) *WebSocketServer {
-	return &WebSocketServer{
+func NewWebSocketServer(port int) *SocketServer {
+	return &SocketServer{
 		port:    port,
 		clients: make(map[*websocket.Conn]bool),
 	}
 }
 
+// StartWebSocketServer initializes and starts the WebSocket server
+func StartWebSocketServer(ws int) {
+	fmt.Printf("\n==========>🔧CREATING WEBSOCKET SERVER🔧<==========\n")
+
+	// Create and store global instance
+	GlobalWSServer = NewWebSocketServer(ws)
+
+	fmt.Printf("[🔧WS] -> Starting WebSocket server on port %d.\n", ws)
+	go func() {
+		err := GlobalWSServer.Start()
+		if err != nil {
+			log.Fatalf("[❌WS]-> WebSocket server error: %v", err)
+		}
+	}()
+
+	// Give the WebSocket server a moment to start
+	time.Sleep(100 * time.Millisecond)
+	fmt.Printf("[🔧WS] -> WebSocket server is running on :%d.\n", ws)
+	fmt.Println("[🖥️UI] -> You can now connect from the web UI.")
+	fmt.Printf("___________________________________________________\n\n")
+}
+
 // Start begins the WebSocket server
-func (s *WebSocketServer) Start() error {
+func (s *SocketServer) Start() error {
 	// Set up HTTP handler for the WebSocket endpoint
 	http.HandleFunc("/ws", s.handleWebSocket)
 
 	// Start the server
 	addr := fmt.Sprintf(":%d", s.port)
-	fmt.Printf("WebSocket server starting on %s\n", addr)
 
 	// Start the HTTP server (this is a blocking call)
 	return http.ListenAndServe(addr, nil)
 }
 
 // handleWebSocket handles WebSocket connection
-func (s *WebSocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+func (s *SocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Upgrade HTTP connection to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -116,7 +135,7 @@ func (s *WebSocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request
 }
 
 // Broadcast sends a message to all connected clients
-func (s *WebSocketServer) Broadcast(msg Message) {
+func (s *SocketServer) Broadcast(msg Message) {
 	// Marshall the message
 	jsonData, err := json.Marshal(msg)
 	if err != nil {
@@ -141,7 +160,7 @@ func (s *WebSocketServer) Broadcast(msg Message) {
 }
 
 // sendMessage sends a message to a specific client
-func (s *WebSocketServer) sendMessage(conn *websocket.Conn, msg Message) error {
+func (s *SocketServer) sendMessage(conn *websocket.Conn, msg Message) error {
 	jsonData, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("error marshalling message: %v", err)
@@ -150,25 +169,7 @@ func (s *WebSocketServer) sendMessage(conn *websocket.Conn, msg Message) error {
 	return conn.WriteMessage(websocket.TextMessage, jsonData)
 }
 
-// StartWebSocketServer initializes and starts the WebSocket server
-func StartWebSocketServer() {
-	// Create and store global instance
-	GlobalWSServer = NewWebSocketServer(WebSocketPort)
-
-	fmt.Printf("Starting WebSocket server on port %d...\n", WebSocketPort)
-	go func() {
-		err := GlobalWSServer.Start()
-		if err != nil {
-			log.Fatalf("WebSocket server error: %v", err)
-		}
-	}()
-
-	// Give the WebSocket server a moment to start
-	time.Sleep(100 * time.Millisecond)
-	fmt.Println("WebSocket server is running. You can now connect from the web UI.")
-}
-
-func (s *WebSocketServer) processClientMessage(conn *websocket.Conn, rawMessage []byte) {
+func (s *SocketServer) processClientMessage(conn *websocket.Conn, rawMessage []byte) {
 	// Parse the incoming command
 	var cmd Command
 	err := json.Unmarshal(rawMessage, &cmd)
@@ -253,69 +254,5 @@ func (s *WebSocketServer) processClientMessage(conn *websocket.Conn, rawMessage 
 
 	default:
 		log.Printf("Unknown command: %s", cmd.Action)
-	}
-}
-
-// SendListenersSnapshot sends a snapshot of all current listeners to a client
-func (s *WebSocketServer) SendListenersSnapshot(conn *websocket.Conn) {
-	// Check if we have access to the service
-	bridge := GetServiceBridge()
-	if bridge == nil {
-		log.Println("Cannot send snapshot: service bridge not available")
-		return
-	}
-
-	// Get all listeners from the service
-	listeners := bridge.GetAllListeners()
-
-	// Convert listeners to info objects
-	listenerInfos := make([]ListenerInfo, 0, len(listeners))
-	for _, listener := range listeners {
-		listenerInfos = append(listenerInfos, ConvertListener(listener))
-	}
-
-	// Create and send the snapshot message
-	snapshotMsg := Message{
-		Type:    ListenersSnapshot,
-		Payload: listenerInfos,
-	}
-
-	err := s.sendMessage(conn, snapshotMsg)
-	if err != nil {
-		log.Printf("Error sending listeners snapshot: %v", err)
-	} else {
-		log.Printf("Sent snapshot with %d listeners", len(listeners))
-	}
-}
-
-// SendConnectionsSnapshot sends a snapshot of all current connections to a client
-func (s *WebSocketServer) SendConnectionsSnapshot(conn *websocket.Conn) {
-	// Check if we have access to the service
-	bridge := GetServiceBridge()
-	if bridge == nil {
-		log.Println("Cannot send connection snapshot: service bridge not available")
-		return
-	}
-
-	// Get all connections from the service
-	connections := bridge.GetAllConnections()
-
-	// Convert connections to info objects
-	connectionInfos := make([]ConnectionInfo, 0, len(connections))
-	for _, connection := range connections {
-		connectionInfos = append(connectionInfos, ConvertConnection(connection))
-	}
-
-	// Create and send the snapshot message
-	snapshotMsg := Message{
-		Type:    ConnectionsSnapshot,
-		Payload: connectionInfos,
-	}
-
-	err := s.sendMessage(conn, snapshotMsg)
-	if err != nil {
-		log.Printf("Error sending connections snapshot: %v", err)
-	} else {
-		log.Printf("Sent snapshot with %d connections", len(connections))
 	}
 }

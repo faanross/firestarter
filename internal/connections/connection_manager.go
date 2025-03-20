@@ -14,7 +14,7 @@ type ConnectionManager struct {
 	connectionHistory map[string][]string  // Maps agent UUID to a list of connection IDs
 	connectionTimes   map[string]time.Time // Maps connection ID to creation time
 	mu                sync.RWMutex
-	wsServer          *websocket.WebSocketServer // Allows us to broadcast connections to UI
+	wsServer          *websocket.SocketServer // Allows us to broadcast connections to UI
 }
 
 // NewConnectionManager creates a new ConnectionManager with an initialized connections map
@@ -141,7 +141,7 @@ func (cm *ConnectionManager) GetConnection(id string) (interfaces.Connection, bo
 }
 
 // SetWebSocketServer sets the WebSocket server reference
-func (cm *ConnectionManager) SetWebSocketServer(server *websocket.WebSocketServer) {
+func (cm *ConnectionManager) SetWebSocketServer(server *websocket.SocketServer) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 	cm.wsServer = server

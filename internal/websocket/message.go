@@ -1,8 +1,8 @@
 package websocket
 
 import (
+	"firestarter/internal/connregistry"
 	"firestarter/internal/interfaces"
-	"firestarter/internal/router"
 	"firestarter/internal/types"
 	"time"
 )
@@ -74,7 +74,7 @@ func ConvertConnection(conn interfaces.Connection) ConnectionInfo {
 // Helper function to get remote address if available
 func getRemoteAddrFromConnection(conn interfaces.Connection) string {
 	// Get the registry using the existing getter function
-	registry := router.GetConnectionRegistry()
+	registry := connregistry.GetConnectionRegistry()
 
 	if registry != nil {
 		connID := conn.GetID()
