@@ -1,22 +1,27 @@
 <template>
-  <div class="counter active-listeners">
-    Active Listeners: {{ listeners.length }}
-  </div>
-
+  <div class="table-container">
+    <div class="table-wrapper">
   <table>
+    <colgroup>
+      <col style="width: 15%"> <!-- CreatedAt -->
+      <col style="width: 25%"> <!-- ID -->
+      <col style="width: 15%"> <!-- Port -->
+      <col style="width: 30%"> <!-- Protocol -->
+      <col style="width: 80px"> <!-- Stop - fixed width for this column -->
+    </colgroup>
     <thead>
     <tr>
       <th>CreatedAt</th>
       <th>ID</th>
       <th>Port</th>
       <th>Protocol</th>
-      <th>Stop</th>
+      <th>🛑</th>
     </tr>
     </thead>
 
     <tbody>
     <tr v-if="listeners.length === 0">
-      <td colspan="5">No active listeners</td>
+      <td colspan="5">Listeners: 0</td>
     </tr>
     <tr v-for="listener in listeners" :key="listener.id">
       <td>
@@ -28,12 +33,14 @@
 
       <td>
         <button class="btn-stop" @click="stopListener(listener.id)">
-          Stop
+          ⬢
         </button>
       </td>
     </tr>
     </tbody>
   </table>
+  </div>
+  </div>
 </template>
 
 <script setup>
@@ -185,31 +192,30 @@ watch(() => props.socket, (newSocket) => {
   background-color: #c0392b;
 }
 
-.btn-start {
-  background-color: #32b253;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
-  cursor: pointer;
-}
 
-.btn-start:hover {
-  background-color: #32b253;
-}
-
-/* Table styling */
 table {
+    width: 900px;
+    table-layout: fixed; /* Prevents resizing based on content */
+  }
+
+.table-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  font-size: 0.9rem; /* Smaller font size for the table */
+}
+
+.table-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 th, td {
   border: 1px solid #ddd;
   padding: 6px; /* Slightly reduced padding for more compact display */
-  text-align: left;
+  text-align: center;
+  font-size: 14px;
 }
 
 th {
@@ -225,27 +231,14 @@ tr:hover {
   background-color: #3a3a3a; /* Highlight row on hover */
 }
 
-/* Counter styling */
-.counter {
-  margin: 20px 0;
-  padding: 10px;
-  background-color: #5e5e5e;
-  color: white;
-  font-weight: bold;
-  border-radius: 4px;
-}
 
 /* Message when no data is available */
-td[colspan="4"] {
+td[colspan="5"] {
   padding: 15px;
   text-align: center;
   color: #aaa;
 }
 
-.counter.active-listeners {
-  background-color: #8a70d6; /* Purple color similar to the tab we were using */
-  color: white;
-}
 
 .timestamp {
   font-size: 0.8rem;

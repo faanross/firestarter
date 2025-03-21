@@ -1,9 +1,8 @@
 <template>
-  <div class="counter active-connections">
-    Active Connections: {{ connections.length }}
-  </div>
-
+  <div class="table-container">
+    <div class="table-wrapper">
   <table>
+
     <thead>
     <tr>
       <th>CreatedAt</th>
@@ -12,13 +11,13 @@
       <th>Remote Address</th>
       <th>Port</th>
       <th>Protocol</th>
-      <th>Stop</th>
+      <th>🛑</th>
     </tr>
     </thead>
 
     <tbody>
     <tr v-if="connections.length === 0">
-      <td colspan="7">No active connections</td>
+      <td colspan="7">Connections: 0</td>
     </tr>
     <tr v-for="connection in connections" :key="connection.id">
       <td>
@@ -37,6 +36,8 @@
     </tr>
     </tbody>
   </table>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -165,15 +166,35 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* You can reuse the same styles as ListenersTable or customize as needed */
-.counter.active-connections {
-  background-color: #3498db; /* Blue color to differentiate from listeners */
-  color: white;
-  margin: 20px 0;
-  padding: 10px;
-  font-weight: bold;
-  border-radius: 4px;
+
+table {
+  width: 900px;
+  table-layout: fixed; /* Prevents resizing based on content */
 }
 
-/* Reuse other styles from ListenersTable.vue */
+.table-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.table-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 6px; /* Slightly reduced padding for more compact display */
+  text-align: center;
+  font-size: 14px;
+}
+
+th {
+  background-color: #5e5e5e;
+  color: white;
+}
+
 </style>

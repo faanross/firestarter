@@ -77,6 +77,7 @@ export default {
   cursor: pointer;
   margin-right: 5px;
   border-radius: 5px 5px 0 0;
+  font-size: 14px;
 }
 
 .tab-button.active {

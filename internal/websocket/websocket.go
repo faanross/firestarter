@@ -50,14 +50,14 @@ func StartWebSocketServer(wsp int) {
 	go func() {
 		err := GlobalWSServer.Start()
 		if err != nil {
-			log.Fatalf("[❌WS]-> WebSocket server error: %v", err)
+			log.Fatalf("[❌ERR]-> WebSocket server error: %v", err)
 		}
 	}()
 
 	// Give the WebSocket server a moment to start
 	time.Sleep(100 * time.Millisecond)
-	fmt.Printf("[🔧WS] -> WebSocket server is running on :%d.\n", wsp)
-	fmt.Println("[🖥️UI] -> You can now connect from the Web UI.")
+	fmt.Printf("[🔧WSS] -> WebSocket server is running on :%d.\n", wsp)
+	fmt.Println("[🖥️WUI] -> You can now connect from the Web UI.")
 
 }
 
@@ -69,7 +69,7 @@ func (s *SocketServer) Start() error {
 	// Start the server
 	addr := fmt.Sprintf(":%d", s.port)
 
-	fmt.Printf("[🔧WS] -> Starting WebSocket server on port %d.\n", s.port)
+	fmt.Printf("[🔧WSS] -> Starting WebSocket server on port %d.\n", s.port)
 
 	// Start the HTTP server (this is a blocking call)
 	return http.ListenAndServe(addr, nil)
@@ -90,7 +90,7 @@ func (s *SocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	s.clients[conn] = true
 	s.mu.Unlock()
 
-	fmt.Println("[🔧WS] -> WebSocket connection established.")
+	fmt.Println("[🔧WSS] -> WebSocket connection established.")
 
 	// Clean up on disconnect
 	defer func() {
@@ -98,7 +98,7 @@ func (s *SocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
 		delete(s.clients, conn)
 		s.mu.Unlock()
-		fmt.Println("[🔧WS] -> WebSocket connection closed.")
+		fmt.Println("[🔧WSS] -> WebSocket connection closed.")
 	}()
 
 	// Simple message reading loop

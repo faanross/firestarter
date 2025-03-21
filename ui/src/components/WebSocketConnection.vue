@@ -1,10 +1,5 @@
 <template>
-  <div>
-    <!-- Connection Status -->
-    <div class="status" :class="{ connected: isConnected }">
-      Server: {{ connectionStatus }}
-    </div>
-  </div>
+
 </template>
 
 <script setup>
@@ -36,7 +31,7 @@ const connectWebSocket = () => {
 
     // Emit the socket to parent component
     emits('socket-ready', socket.value);
-    
+
   });
 
   // Connection closed

@@ -7,7 +7,7 @@
 
   color-scheme: dark;
   color: #fffbfb; /* Dracula foreground */
-  background-color: #232323; /* Dracula background */
+  background-color: #2c2d30; /* Dracula background */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -30,7 +30,7 @@ body {
   place-items: start;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #212123; /* Dracula background */
+  background-color: #2C2D30; /* Dracula background */
 }
 
 h1 {

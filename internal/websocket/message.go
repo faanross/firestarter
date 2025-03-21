@@ -75,7 +75,7 @@ func (s *SocketServer) processClientMessage(conn *websocket.Conn, rawMessage []b
 		return
 	}
 
-	fmt.Printf("[🖥️UI] -> Received command: %s.\n", convertText(cmd.Action))
+	fmt.Printf("[🖥️WUI] -> Received command: %s.\n", convertText(cmd.Action))
 
 	// Get the service bridge
 	bridge := GetServiceBridge()
@@ -126,32 +126,32 @@ func (s *SocketServer) processClientMessage(conn *websocket.Conn, rawMessage []b
 		// Extract the connection ID from the payload
 		payloadMap, ok := cmd.Payload.(map[string]interface{})
 		if !ok {
-			log.Println("Invalid payload format for stop_connection command")
+			log.Println("[❌ERR] -> Invalid payload format for stop_connection command")
 			return
 		}
 
 		idValue, exists := payloadMap["id"]
 		if !exists {
-			log.Println("Missing 'id' in stop_connection payload")
+			log.Println("[❌ERR] -> Missing 'id' in stop_connection payload")
 			return
 		}
 
 		id, ok := idValue.(string)
 		if !ok {
-			log.Println("Connection ID must be a string")
+			log.Println("[❌ERR] -> Connection ID must be a string")
 			return
 		}
 
 		// Stop the connection using the service bridge
 		err := bridge.StopConnection(id)
 		if err != nil {
-			log.Printf("Error stopping connection %s: %v", id, err)
+			log.Printf("[❌ERR] -> Error stopping connection %s: %v", id, err)
 		} else {
-			log.Printf("Connection %s stopped successfully", id)
+			fmt.Printf("[🛑STP] -> Connection %s stopped successfully.\n", id)
 		}
 
 	default:
-		log.Printf("Unknown command: %s", cmd.Action)
+		log.Printf("[❌ERR] -> Unknown command: %s.", cmd.Action)
 	}
 }
 
