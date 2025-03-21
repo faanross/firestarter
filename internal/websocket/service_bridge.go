@@ -10,8 +10,8 @@ type ServiceBridge interface {
 	GetAllListeners() []types.Listener
 	StopListener(id string) error
 	GetAllConnections() []interfaces.Connection
-	GetConnectionCount() int
 	StopConnection(id string) error
+	IsPortAvailable(port string) bool
 }
 
 // Global service bridge instance

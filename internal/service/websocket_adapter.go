@@ -36,11 +36,6 @@ func (a *websocketAdapter) GetAllConnections() []interfaces.Connection {
 	return a.service.GetAllConnections()
 }
 
-// GetConnectionCount implements ServiceBridge.GetConnectionCount
-func (a *websocketAdapter) GetConnectionCount() int {
-	return a.service.GetConnectionCount()
-}
-
 // StopConnection implements ServiceBridge.StopConnection
 func (a *websocketAdapter) StopConnection(id string) error {
 	// Find the connection in the connection manager
@@ -63,4 +58,9 @@ func (a *websocketAdapter) StopConnection(id string) error {
 	a.service.GetConnectionManager().RemoveConnection(id)
 
 	return nil
+}
+
+// IsPortAvailable implements ServiceBridge.IsPortAvailable
+func (a *websocketAdapter) IsPortAvailable(port string) bool {
+	return a.service.IsPortAvailable(port)
 }
