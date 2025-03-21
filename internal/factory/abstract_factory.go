@@ -54,14 +54,17 @@ func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFac
 }
 
 // CreateListener creates a listener with the specified protocol type
-func (af *AbstractFactory) CreateListener(protocol interfaces.ProtocolType, port string) (types.Listener, error) {
+func (af *AbstractFactory) CreateListener(protocol interfaces.ProtocolType, port string, customID string) (types.Listener, error) {
 	factory, ok := af.factories[protocol]
 	if !ok {
 		return nil, fmt.Errorf("unsupported protocol: %v", protocol)
 	}
 
-	// Generate a random ID
-	id := fmt.Sprintf("listener_%06d", rand.Intn(1000000))
+	// Use custom ID if provided, otherwise generate a random one
+	id := customID
+	if id == "" {
+		id = fmt.Sprintf("listener_%06d", rand.Intn(1000000))
+	}
 
 	// Pass the connection manager along with other parameters
 	return factory.CreateListener(id, port, af.connManager)

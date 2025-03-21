@@ -32,9 +32,9 @@ func NewListenerService(factory *factory.AbstractFactory, manager *manager.Liste
 }
 
 // CreateAndStartListener creates a listener, registers it with the manager, and starts it
-func (s *ListenerService) CreateAndStartListener(protocol interfaces.ProtocolType, port string, wg *sync.WaitGroup) (types.Listener, error) {
-	// Create the listener
-	listener, err := s.factory.CreateListener(protocol, port)
+func (s *ListenerService) CreateAndStartListener(protocol interfaces.ProtocolType, port string, wg *sync.WaitGroup, customID string) (types.Listener, error) {
+	// Create the listener with the potentially custom ID
+	listener, err := s.factory.CreateListener(protocol, port, customID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create listener: %w", err)
 	}
