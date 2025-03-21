@@ -85,11 +85,11 @@ func (a *websocketAdapter) CreateListener(id string, protocol int, port string) 
 		return nil, fmt.Errorf("invalid protocol type: %d", protocol)
 	}
 
-	// Use a WaitGroup to wait for the listener to start
+	// Use a WaitGroup to coordinate the listener start
 	var wg sync.WaitGroup
 
-	// Call the service to create and start the listener
-	listener, err := a.service.CreateAndStartListener(protocolType, port, &wg)
+	// Pass the custom ID to the service layer
+	listener, err := a.service.CreateAndStartListener(protocolType, port, &wg, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create listener: %w", err)
 	}
