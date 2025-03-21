@@ -5,13 +5,14 @@ import (
 	"firestarter/internal/types"
 )
 
-// ServiceBridge defines the interface for accessing listener service functionality
+// ServiceBridge acts as contract between the WebSocket server and the service layer
 type ServiceBridge interface {
 	GetAllListeners() []types.Listener
 	StopListener(id string) error
 	GetAllConnections() []interfaces.Connection
 	StopConnection(id string) error
 	IsPortAvailable(port string) bool
+	CreateListener(id string, protocol int, port string) (types.Listener, error)
 }
 
 // Global service bridge instance
