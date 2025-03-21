@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
+	"strconv"
 )
 
 // MessageType defines the type of WebSocket messages
@@ -186,7 +187,94 @@ func (s *SocketServer) processClientMessage(conn *websocket.Conn, rawMessage []b
 		if err != nil {
 			log.Printf("[❌ERR] -> Error sending port check result: %v", err)
 		}
+	case "create_listener":
+		// Extract the parameters from the payload
+		payloadMap, ok := cmd.Payload.(map[string]interface{})
+		if !ok {
+			log.Printf("[❌ERR] -> Invalid payload format for create_listener command")
+			return
+		}
 
+		// Extract the port
+		portValue, exists := payloadMap["port"]
+		if !exists {
+			log.Printf("[❌ERR] -> Missing 'port' in create_listener payload")
+			return
+		}
+
+		// Handle port as string or number
+		var port string
+		switch v := portValue.(type) {
+		case string:
+			port = v
+		case float64:
+			port = fmt.Sprintf("%.0f", v)
+		default:
+			log.Printf("[❌ERR] -> Port must be a string or number, got %T", portValue)
+			return
+		}
+
+		// Extract the protocol
+		protocolValue, exists := payloadMap["protocol"]
+		if !exists {
+			log.Printf("[❌ERR] -> Missing 'protocol' in create_listener payload")
+			return
+		}
+
+		// Protocol should be a number (though it might come as a float64 from JSON)
+		var protocol int
+		switch v := protocolValue.(type) {
+		case float64:
+			protocol = int(v)
+		case string:
+			// Try to parse string as int
+			p, err := strconv.Atoi(v)
+			if err != nil {
+				log.Printf("[❌ERR] -> Protocol must be a valid number, got %v", v)
+				return
+			}
+			protocol = p
+		default:
+			log.Printf("[❌ERR] -> Protocol must be a number, got %T", protocolValue)
+			return
+		}
+
+		// Extract the ID (which is optional)
+		var id string
+		if idValue, exists := payloadMap["id"]; exists {
+			if idStr, ok := idValue.(string); ok {
+				id = idStr
+			}
+		}
+
+		// Create the listener
+		listener, err := bridge.CreateListener(id, protocol, port)
+		if err != nil {
+			log.Printf("[❌ERR] -> Failed to create listener: %v", err)
+
+			// Send error message back to client
+			errorResponse := Message{
+				Type: "listener_creation_error",
+				Payload: map[string]interface{}{
+					"message": err.Error(),
+				},
+			}
+			s.sendMessage(conn, errorResponse)
+			return
+		}
+
+		// Success - send response with created listener details
+		successResponse := Message{
+			Type: "listener_created",
+			Payload: map[string]interface{}{
+				"id":       listener.GetID(),
+				"port":     listener.GetPort(),
+				"protocol": listener.GetProtocol(),
+			},
+		}
+		s.sendMessage(conn, successResponse)
+
+		fmt.Printf("[🆕NEW] -> Listener %s created successfully via WebSocket\n", listener.GetID())
 	default:
 		log.Printf("[❌ERR] -> Unknown command: %s.", cmd.Action)
 	}
@@ -204,6 +292,8 @@ func convertText(action string) string {
 		return "Stop Connection"
 	case "check_port":
 		return "Check Port Availability"
+	case "create_listener":
+		return "Create New Listener"
 	default:
 		return "Unknown"
 	}

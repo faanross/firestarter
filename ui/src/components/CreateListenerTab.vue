@@ -149,18 +149,31 @@ const processMessage = (event) => {
 
     // Handle port check result
     if (message.type === 'port_check_result') {
-      console.log("CreateListenerTab processing port check result:", message.payload);
       checkingPort.value = false;
 
-      if (message.payload && message.payload.port && message.payload.port === String(formData.value.port)) {
+      if (message.payload && message.payload.port &&
+          String(message.payload.port) === String(formData.value.port)) {
         portStatus.value = message.payload.isAvailable ? 'available' : 'unavailable';
         console.log(`Port ${message.payload.port} availability set to: ${portStatus.value}`);
-      } else {
-        console.log("Port mismatch or missing payload properties:", {
-          messagePort: message.payload?.port,
-          formPort: formData.value.port
-        });
       }
+    }
+    // Handle listener creation success
+    else if (message.type === 'listener_created') {
+      console.log('Listener created successfully:', message.payload);
+
+      // Show a success notification
+      alert(`Listener created successfully on port ${message.payload.port}!`);
+
+      // You could redirect to the Listeners tab here if desired
+    }
+    // Handle listener creation error
+    else if (message.type === 'listener_creation_error') {
+      console.error('Error creating listener:', message.payload.message);
+
+      // Show an error notification
+      alert(`Error creating listener: ${message.payload.message}`);
+
+      // Optionally restore the form data for the user to try again
     }
   } catch (error) {
     console.error('Error processing WebSocket message in CreateListenerTab:', error);
@@ -183,12 +196,33 @@ onUnmounted(() => {
   }
 });
 
-// Create listener
+// createListener function
 const createListener = () => {
   if (!isFormValid.value) return;
 
-  console.log('Creating listener with:', formData.value);
-  // We'll implement the actual creation in a later step
+  // Create command for sending to server
+  const createCommand = {
+    action: 'create_listener',
+    payload: {
+      id: formData.value.id.trim() || undefined, // Only send if not empty
+      port: String(formData.value.port),
+      protocol: parseInt(formData.value.protocol)
+    }
+  };
+
+  // Ensure socket is connected
+  if (!props.socket || props.socket.readyState !== WebSocket.OPEN) {
+    console.error('WebSocket not connected');
+    return;
+  }
+
+  console.log('Sending create listener command:', createCommand);
+
+  // Send the command
+  props.socket.send(JSON.stringify(createCommand));
+
+  // We'll handle the response in processMessage
+  // For now, assume it will succeed
 
   // Reset form after submission
   formData.value = {
