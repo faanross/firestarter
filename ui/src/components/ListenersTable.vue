@@ -33,7 +33,7 @@
 
       <td>
         <button class="btn-stop" @click="stopListener(listener.id)">
-          ⬢
+          ⬣
         </button>
       </td>
     </tr>

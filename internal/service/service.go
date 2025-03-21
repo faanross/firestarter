@@ -9,6 +9,8 @@ import (
 	"firestarter/internal/types"
 	"firestarter/internal/websocket"
 	"fmt"
+	"log"
+	"net"
 	"sync"
 	"time"
 )
@@ -330,4 +332,21 @@ func (s *ListenerService) BroadcastConnectionStatus() {
 		Type:    ConnectionStatus,
 		Payload: payload,
 	})
+}
+
+// IsPortAvailable checks if the specified port is available for binding
+func (s *ListenerService) IsPortAvailable(port string) bool {
+	// Try to bind to the port to see if it's available
+	listener, err := net.Listen("tcp", ":"+port)
+
+	// If there was an error, the port is not available
+	if err != nil {
+		log.Printf("[❌ERR] -> Port %s is not available: %v", port, err)
+		return false
+	}
+
+	// If we get here, the port is available, so close the listener and return true
+	listener.Close()
+	fmt.Printf("[✅SCS] -> Port %s is available\n", port)
+	return true
 }

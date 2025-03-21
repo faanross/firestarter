@@ -30,7 +30,7 @@
       <td>{{ connection.protocol }}</td>
       <td>
         <button class="btn-stop" @click="stopConnection(connection.id)">
-          Stop
+          ⬣
         </button>
       </td>
     </tr>
