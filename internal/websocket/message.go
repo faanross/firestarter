@@ -149,6 +149,43 @@ func (s *SocketServer) processClientMessage(conn *websocket.Conn, rawMessage []b
 		} else {
 			fmt.Printf("[🛑STP] -> Connection %s stopped successfully.\n", id)
 		}
+	case "check_port":
+		// Extract the port from the payload
+		payloadMap, ok := cmd.Payload.(map[string]interface{})
+		if !ok {
+			log.Println("[❌ERR] -> Invalid payload format for check_port command")
+			return
+		}
+
+		portValue, exists := payloadMap["port"]
+		if !exists {
+			log.Println("[❌ERR] -> Missing 'port' in check_port payload")
+			return
+		}
+
+		port, ok := portValue.(string)
+		if !ok {
+			log.Println("[❌ERR] -> Port must be a string")
+			return
+		}
+
+		// Check if the port is available
+		isAvailable := bridge.IsPortAvailable(port)
+
+		// Send the result back to the client
+		response := Message{
+			Type: "port_check_result",
+			Payload: map[string]interface{}{
+				"port":        port,
+				"isAvailable": isAvailable,
+			},
+		}
+
+		// Send response directly to the requesting client, not broadcast
+		err := s.sendMessage(conn, response)
+		if err != nil {
+			log.Printf("[❌ERR] -> Error sending port check result: %v", err)
+		}
 
 	default:
 		log.Printf("[❌ERR] -> Unknown command: %s.", cmd.Action)
@@ -161,10 +198,12 @@ func convertText(action string) string {
 		return "Get Listeners Snapshot"
 	case "stop_listener":
 		return "Stop Listener"
-	case "get_connection":
+	case "get_connections":
 		return "Get Connections Snapshot"
 	case "stop_connection":
 		return "Stop Connection"
+	case "check_port":
+		return "Check Port Availability"
 	default:
 		return "Unknown"
 	}

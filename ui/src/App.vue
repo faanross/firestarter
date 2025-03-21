@@ -15,6 +15,10 @@
           initialTab="tab1"
           @tab-changed="handleTabChange">
 
+        <template #tab0>
+          <CreateListenerTab :socket="sharedSocket" />
+        </template>
+
         <template #tab1>
           <ListenersTable :socket="sharedSocket" />
         </template>
@@ -35,9 +39,11 @@ import ListenersTable from './components/ListenersTable.vue';
 import WebSocketConnection from './components/WebSocketConnection.vue';
 import TabsComponent from './components/TabsComponent.vue';
 import ConnectionsTable from './components/ConnectionsTable.vue';
+import CreateListenerTab from './components/CreateListenerTab.vue';
 
 // Define reactive data directly at the top level
 const tabs = [
+  { id: 'tab0', name: 'Create' },
   { id: 'tab1', name: 'Listeners' },
   { id: 'tab2', name: 'Connections' },
 ];
