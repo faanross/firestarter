@@ -42,17 +42,17 @@ func (a *websocketAdapter) StopConnection(id string) error {
 	// Find the connection in the connection manager
 	conn, found := a.service.GetConnectionManager().GetConnection(id)
 	if !found {
-		return fmt.Errorf("no connection found with ID %s", id)
+		return fmt.Errorf(" [❌ERR] -> No connection found with ID %s", id)
 	}
 
 	// Log the termination request
-	fmt.Printf("Request to terminate connection %s (Protocol: %v, Agent: %s)\n",
+	fmt.Printf("[🙋🏻REQ] -> Request to terminate connection %s (Protocol: %v, Agent: %s)\n",
 		id, conn.GetProtocol(), conn.GetAgentUUID())
 
 	// Close the connection
 	err := conn.Close()
 	if err != nil {
-		return fmt.Errorf("failed to close connection %s: %w", id, err)
+		return fmt.Errorf("[❌ERR] -> Failed to close connection %s: %w", id, err)
 	}
 
 	// Explicitly remove from connection manager to ensure proper cleanup
@@ -82,7 +82,7 @@ func (a *websocketAdapter) CreateListener(id string, protocol int, port string) 
 	case 5:
 		protocolType = interfaces.H3
 	default:
-		return nil, fmt.Errorf("invalid protocol type: %d", protocol)
+		return nil, fmt.Errorf("[❌ERR] -> Invalid protocol type: %d", protocol)
 	}
 
 	// Use a WaitGroup to coordinate the listener start
@@ -91,7 +91,7 @@ func (a *websocketAdapter) CreateListener(id string, protocol int, port string) 
 	// Pass the custom ID to the service layer
 	listener, err := a.service.CreateAndStartListener(protocolType, port, &wg, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create listener: %w", err)
+		return nil, fmt.Errorf("[❌ERR] -> Failed to create listener: %w", err)
 	}
 
 	fmt.Printf("[🆕NEW] -> Listener %s created on port %s using protocol %s\n",
