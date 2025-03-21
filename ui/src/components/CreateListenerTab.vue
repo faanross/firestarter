@@ -73,9 +73,13 @@
         <button
             type="submit"
             class="create-button"
-            :disabled="!isFormValid"
+            :disabled="!isFormValid || isLoading"
         >
-          Create Listener
+  <span v-if="isLoading">
+    <span class="loading-spinner"></span>
+    Creating...
+  </span>
+          <span v-else>Create Listener</span>
         </button>
       </div>
     </form>
@@ -84,7 +88,11 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, defineProps } from 'vue';
+import { useToast } from "vue-toastification";
 
+const toast = useToast();
+
+const isLoading = ref(false);
 
 const props = defineProps({
   socket: Object
@@ -161,19 +169,50 @@ const processMessage = (event) => {
     else if (message.type === 'listener_created') {
       console.log('Listener created successfully:', message.payload);
 
-      // Show a success notification
-      alert(`Listener created successfully on port ${message.payload.port}!`);
+      // Use toast instead of alert
+      toast.success(`
+    <strong>Listener Created</strong><br>
+    ID: ${message.payload.id}<br>
+    Port: ${message.payload.port}<br>
+    Protocol: ${message.payload.protocol}
+  `, {
+        timeout: 6000,
+        dangerouslyHTMLString: true
+      });
+      isLoading.value = false; // Reset loading state
 
-      // You could redirect to the Listeners tab here if desired
+      // Reset form with animation
+      formData.value = {
+        id: '',
+        port: '',
+        protocol: ''
+      };
+      portStatus.value = null;
+
+      // Add animation class to form
+      const form = document.querySelector('.create-form');
+      if (form) {
+        form.classList.add('form-reset-animation');
+        // Remove the class after animation completes
+        setTimeout(() => {
+          form.classList.remove('form-reset-animation');
+        }, 500);
+      }
     }
+
     // Handle listener creation error
     else if (message.type === 'listener_creation_error') {
       console.error('Error creating listener:', message.payload.message);
 
-      // Show an error notification
-      alert(`Error creating listener: ${message.payload.message}`);
-
-      // Optionally restore the form data for the user to try again
+      // Use toast instead of alert
+      toast.error(`
+    <strong>Error Creating Listener</strong><br>
+    ${message.payload.message}
+  `, {
+        timeout: 8000,
+        dangerouslyHTMLString: true
+      });
+      isLoading.value = false; // Reset loading state
     }
   } catch (error) {
     console.error('Error processing WebSocket message in CreateListenerTab:', error);
@@ -200,11 +239,14 @@ onUnmounted(() => {
 const createListener = () => {
   if (!isFormValid.value) return;
 
+  // Set loading state
+  isLoading.value = true;
+
   // Create command for sending to server
   const createCommand = {
     action: 'create_listener',
     payload: {
-      id: formData.value.id.trim() || undefined, // Only send if not empty
+      id: formData.value.id.trim() || undefined,
       port: String(formData.value.port),
       protocol: parseInt(formData.value.protocol)
     }
@@ -213,6 +255,8 @@ const createListener = () => {
   // Ensure socket is connected
   if (!props.socket || props.socket.readyState !== WebSocket.OPEN) {
     console.error('WebSocket not connected');
+    isLoading.value = false; // Reset loading state on error
+    toast.error("Cannot create listener: WebSocket not connected");
     return;
   }
 
@@ -221,16 +265,6 @@ const createListener = () => {
   // Send the command
   props.socket.send(JSON.stringify(createCommand));
 
-  // We'll handle the response in processMessage
-  // For now, assume it will succeed
-
-  // Reset form after submission
-  formData.value = {
-    id: '',
-    port: '',
-    protocol: ''
-  };
-  portStatus.value = null;
 };
 
 const validateForm = () => {
@@ -265,6 +299,17 @@ const formErrors = computed(() => {
 </script>
 
 <style scoped>
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes formReset {
+  0% { opacity: 0.8; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+
 .create-listener-container {
   max-width: 600px;
   margin: 0 auto;
@@ -389,6 +434,54 @@ label {
   color: #f1fa8c;
   margin-left: 10px;
   font-style: italic;
+}
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+
+.form-input, .form-select, .check-button, .create-button {
+  transition: all 0.3s ease;
+}
+
+.check-button:disabled, .create-button:disabled {
+  opacity: 0.6;
+  transform: scale(0.98);
+}
+
+.check-button:not(:disabled):hover,
+.create-button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.create-button:not(:disabled):active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.port-status, .validation-error, .checking-status {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.port-status:not(:empty),
+.validation-error:not(:empty),
+.checking-status:not(:empty) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.form-reset-animation {
+  animation: formReset 0.5s ease;
 }
 
 </style>

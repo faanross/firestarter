@@ -12,7 +12,7 @@
     <div class="main-content">
       <TabsComponent
           :tabs="tabs"
-          initialTab="tab1"
+          initialTab="tab0"
           @tab-changed="handleTabChange">
 
         <template #tab0>
