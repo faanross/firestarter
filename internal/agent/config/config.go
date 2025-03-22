@@ -48,10 +48,10 @@ func DefaultConfig() *Config {
 		TargetHost:          "localhost",
 		TargetPort:          "7777",
 		Protocol:            H1C,
-		ReconnectAttempts:   5,
-		ReconnectDelay:      5 * time.Second,
-		ConnectionTimeout:   10 * time.Second,
-		RequestTimeout:      30 * time.Second,
+		ReconnectAttempts:   9999,             // practically indefinite, decrease if implementing backup host (TODO)
+		ConnectionTimeout:   60 * time.Second, // kernel will try incremental transmissions up until 60 sec
+		ReconnectDelay:      30 * time.Minute, // if not able to connect, wait 30 mins, try process again
+		RequestTimeout:      5 * time.Minute,  // very generous here since unplanned timeouts can be an issue
 		HealthCheckInterval: 30 * time.Second,
 		HealthCheckEndpoint: "/",
 	}
