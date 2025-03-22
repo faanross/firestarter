@@ -28,6 +28,7 @@
               required
               min="1024"
               max="65535"
+              @blur="touchedFields.port = true"
           >
           <button
               type="button"
@@ -45,7 +46,7 @@
 </span>
           <span v-if="checkingPort" class="checking-status">Checking...</span>
         </div>
-        <span class="validation-error" v-if="formErrors.port">{{ formErrors.port }}</span>
+
       </div>
 
       <!-- Protocol Field -->
@@ -56,6 +57,7 @@
             v-model="formData.protocol"
             class="form-select"
             required
+            @blur="touchedFields.protocol = true"
         >
           <option value="" disabled selected>Select a protocol</option>
           <option value="1">HTTP/1.1 Clear (H1C)</option>
@@ -64,7 +66,7 @@
           <option value="4">HTTP/2 TLS (H2TLS)</option>
           <option value="5">HTTP/3 (H3)</option>
         </select>
-        <span class="validation-error" v-if="formErrors.protocol">{{ formErrors.protocol }}</span>
+      
       </div>
 
       <!-- Submit Button -->
@@ -107,6 +109,12 @@ const formData = ref({
 // Port check status
 const portStatus = ref(null);
 const checkingPort = ref(false);
+
+// Add near your other ref declarations
+const touchedFields = ref({
+  port: false,
+  protocol: false
+});
 
 // Validate form
 const isFormValid = computed(() => {
