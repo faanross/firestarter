@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -48,6 +49,11 @@ func (p *H1CProtocol) Initialize(config ProtocolConfig) error {
 			MaxConnsPerHost:     1,
 			ForceAttemptHTTP2:   false, // Ensure HTTP/1.1 is used
 			TLSHandshakeTimeout: config.ConnectionTimeout,
+			// Custom dialer with keepalives enabled
+			DialContext: (&net.Dialer{
+				Timeout:   config.ConnectionTimeout,
+				KeepAlive: 30 * time.Second, // Send keepalive every 30 seconds
+			}).DialContext,
 		},
 	}
 
