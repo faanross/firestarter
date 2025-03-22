@@ -133,7 +133,7 @@ func (cm *ConnectionManager) GetConnection(id string) (interfaces.Connection, bo
 	conn, exists := cm.connections[id]
 
 	if exists && conn.GetAgentUUID() != "" {
-		fmt.Printf("[UUID-de🪲] -> Connection manager: Retrieved connection %s with UUID %s\n",
+		fmt.Printf("[DBG🪲] -> Connection manager: Retrieved connection %s with UUID %s\n",
 			id, conn.GetAgentUUID())
 	}
 
@@ -146,5 +146,5 @@ func (cm *ConnectionManager) SetWebSocketServer(server *websocket.SocketServer) 
 	defer cm.mu.Unlock()
 	cm.wsServer = server
 	fmt.Println("[🔗LNK] -> Connection Manager linked to WebSocket server.")
-	fmt.Printf("============================================================\n")
+	fmt.Printf("===========================================================\n")
 }

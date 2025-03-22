@@ -9,7 +9,7 @@ import (
 // ListenerManager keeps track of all active listeners
 type ListenerManager struct {
 	listeners map[string]types.Listener
-	mu        sync.RWMutex // For thread safety
+	mu        sync.RWMutex
 }
 
 // NewListenerManager creates a new listener manager

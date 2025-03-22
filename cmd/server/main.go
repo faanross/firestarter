@@ -8,6 +8,7 @@ import (
 	"firestarter/internal/service"
 	"firestarter/internal/websocket"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -57,7 +58,7 @@ func ApplicationSetup() (*manager.ListenerManager, *service.ListenerService) {
 		connectionManager.SetWebSocketServer(wsServer)
 
 	} else {
-		fmt.Println("[INIT-ERROR] WebSocket server not available for Connection Manager!")
+		log.Println("[❌ERR] -> WebSocket server not available for Connection Manager.")
 	}
 
 	// Initialize connection registry for UUID tracking

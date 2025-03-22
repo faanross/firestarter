@@ -23,10 +23,9 @@ type ConnectionRegistry struct {
 // NewConnectionRegistry creates a new connection registry
 func NewConnectionRegistry() *ConnectionRegistry {
 	return &ConnectionRegistry{
-		connMap:        make(map[string]string),
-		uuidMap:        make(map[string]string),
-		processedPairs: make(map[string]bool),
-		// connManager will be set later via SetConnectionManager
+		connMap:        make(map[string]string), // remoteAddr : conn ID
+		uuidMap:        make(map[string]string), // conn ID : UUID
+		processedPairs: make(map[string]bool),   // remoteAddr : UUID
 	}
 }
 
@@ -35,7 +34,9 @@ func (cr *ConnectionRegistry) SetConnectionManager(cm interfaces.ConnectionManag
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 	cr.connManager = cm
-	fmt.Println("[🔗LNK] -> Connection registry linked to connection manager.")
+	fmt.Println("[🔗LNK] -> Global Registry linked to Connection Manager.")
+	fmt.Println("=================================================================")
+	fmt.Println()
 }
 
 // RegisterConnection associates a TCP connection with a connection ID
@@ -115,7 +116,7 @@ func (cr *ConnectionRegistry) GetRemoteAddrByConnID(connID string) string {
 // InitializeConnectionRegistry creates and sets up the global connection registry
 func InitializeConnectionRegistry() {
 	if GlobalConnectionRegistry == nil {
-		fmt.Printf("\n=======>🌎INIT GLOBAL CONNECTION REGISTRY🌎<=======\n")
+		fmt.Printf("\n==============>🌎INIT GLOBAL CONNECTION REGISTRY🌎<==============\n")
 		GlobalConnectionRegistry = NewConnectionRegistry()
 	}
 }

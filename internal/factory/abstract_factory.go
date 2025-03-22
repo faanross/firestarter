@@ -24,8 +24,8 @@ type AbstractFactory struct {
 func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFactory {
 	certProvider, err := certificates.GetDefaultCertificateProvider()
 	if err != nil {
-		fmt.Printf("Warning: Failed to load certificates: %v\n", err)
-		fmt.Println("TLS listeners will not be available.")
+		fmt.Printf("[⚠️WRN] -> Failed to load certificates: %v\n", err)
+		fmt.Println("[⚠️WRN] -> TLS listeners will not be available.")
 		// Continue without TLS support
 		return &AbstractFactory{
 			factories: map[interfaces.ProtocolType]types.ListenerFactory{
@@ -36,7 +36,7 @@ func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFac
 		}
 	}
 
-	// Create an H1TLS factory with the certificate provider
+	// Create factories with certProvider for h1tls, h2tls, and h3
 	h1tlsFactory := h1tls.NewFactory(certProvider)
 	h2tlsFactory := h2tls.NewFactory(certProvider)
 	h3Factory := h3.NewFactory(certProvider)
@@ -57,7 +57,7 @@ func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFac
 func (af *AbstractFactory) CreateListener(protocol interfaces.ProtocolType, port string, customID string) (types.Listener, error) {
 	factory, ok := af.factories[protocol]
 	if !ok {
-		return nil, fmt.Errorf("unsupported protocol: %v", protocol)
+		return nil, fmt.Errorf("[❌ERR] -> Unsupported protocol: %v", protocol)
 	}
 
 	// Use custom ID if provided, otherwise generate a random one

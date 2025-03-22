@@ -112,12 +112,3 @@ func (tc *TrackingConnection) SetReadDeadline(t time.Time) error {
 func (tc *TrackingConnection) SetWriteDeadline(t time.Time) error {
 	return tc.conn.SetWriteDeadline(t)
 }
-
-// UpdateAgentUUID updates the agent UUID for this connection
-func (tc *TrackingConnection) UpdateAgentUUID(agentUUID string) {
-	// This is a simplification - in real code we'd need to access the underlying
-	// connection and set its AgentUUID field
-	if conn, ok := tc.trackedConn.(interface{ SetAgentUUID(string) }); ok {
-		conn.SetAgentUUID(agentUUID)
-	}
-}

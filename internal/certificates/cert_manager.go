@@ -63,7 +63,7 @@ func GetDefaultCertificateProvider() (*FileCertificateProvider, error) {
 
 	// Check if the directory exists
 	if _, err := os.Stat(certDir); os.IsNotExist(err) {
-		return nil, fmt.Errorf("certificate directory not found: %s", certDir)
+		return nil, fmt.Errorf("[❌ERR] -> Certificate directory not found: %s", certDir)
 	}
 
 	certFile := filepath.Join(certDir, "server.crt")
@@ -71,11 +71,12 @@ func GetDefaultCertificateProvider() (*FileCertificateProvider, error) {
 
 	// Check if the files exist
 	if _, err := os.Stat(certFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("certificate file not found: %s", certFile)
+		return nil, fmt.Errorf("[❌ERR] -> Certificate file not found: %s", certFile)
 	}
 	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("key file not found: %s", keyFile)
+		return nil, fmt.Errorf("[❌ERR] -> Key file not found: %s", keyFile)
 	}
 
+	fmt.Printf("[🔐TLS] -> TLS Key and Cert loaded successfully.\n\n")
 	return NewFileCertificateProvider(certFile, keyFile), nil
 }
