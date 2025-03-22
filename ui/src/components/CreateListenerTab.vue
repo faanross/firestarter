@@ -45,7 +45,6 @@
 </span>
           <span v-if="checkingPort" class="checking-status">Checking...</span>
         </div>
-        <small class="port-hint">Port must be between 1024 and 65535</small>
         <span class="validation-error" v-if="formErrors.port">{{ formErrors.port }}</span>
       </div>
 
@@ -87,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, defineProps } from 'vue';
+import { ref, computed, onUnmounted, defineProps, watch } from 'vue';
 import { useToast } from "vue-toastification";
 
 const toast = useToast();
@@ -152,32 +151,39 @@ const checkPortAvailability = () => {
 // Add a function to handle WebSocket messages
 const processMessage = (event) => {
   try {
+    // Parse the message and log the complete object for debugging
     const message = JSON.parse(event.data);
-    console.log("CreateListenerTab received message:", message.type);
+    console.log("CreateListenerTab received message:", message);
 
     // Handle port check result
     if (message.type === 'port_check_result') {
+      console.log("Processing port check result:", message.payload);
       checkingPort.value = false;
 
-      if (message.payload && message.payload.port &&
-          String(message.payload.port) === String(formData.value.port)) {
-        portStatus.value = message.payload.isAvailable ? 'available' : 'unavailable';
-        console.log(`Port ${message.payload.port} availability set to: ${portStatus.value}`);
+      // More forgiving check of payload properties
+      if (message.payload) {
+        // Handle the port value regardless of type (string or number)
+        const messagePort = String(message.payload.port || '');
+        const currentPort = String(formData.value.port || '');
+
+        console.log(`Comparing ports: message=${messagePort}, form=${currentPort}`);
+
+        if (messagePort === currentPort) {
+          const available = Boolean(message.payload.isAvailable);
+          portStatus.value = available ? 'available' : 'unavailable';
+          console.log(`Port ${messagePort} availability set to: ${portStatus.value}`);
+        } else {
+          console.log(`Port mismatch: message=${messagePort}, form=${currentPort}`);
+        }
+      } else {
+        console.error("Invalid payload structure:", message);
       }
     }
     // Handle listener creation success
     else if (message.type === 'listener_created') {
       console.log('Listener created successfully:', message.payload);
-
-      // Use toast instead of alert
-      toast.success(`
-    <strong>Listener Created</strong><br>
-    ID: ${message.payload.id}<br>
-    Port: ${message.payload.port}<br>
-    Protocol: ${message.payload.protocol}
-  `, {
-        timeout: 6000,
-        dangerouslyHTMLString: true
+      toast.success(`Listener Created: ${message.payload.id} (Port: ${message.payload.port}, Protocol: ${message.payload.protocol})`, {
+        timeout: 6000
       });
       isLoading.value = false; // Reset loading state
 
@@ -199,7 +205,6 @@ const processMessage = (event) => {
         }, 500);
       }
     }
-
     // Handle listener creation error
     else if (message.type === 'listener_creation_error') {
       console.error('Error creating listener:', message.payload.message);
@@ -214,24 +219,35 @@ const processMessage = (event) => {
       });
       isLoading.value = false; // Reset loading state
     }
+    else {
+      // Log any unhandled message types
+      console.log(`Unhandled message type: ${message.type}`);
+    }
   } catch (error) {
-    console.error('Error processing WebSocket message in CreateListenerTab:', error);
+    console.error('Error processing WebSocket message in CreateListenerTab:', error, event.data);
   }
 };
 
-// Add socket event listener when component is mounted
-onMounted(() => {
-  console.log("CreateListenerTab mounted, socket exists:", !!props.socket);
-  if (props.socket) {
-    props.socket.addEventListener('message', processMessage);
+// Replace the onMounted/onUnmounted event registration with this watch approach
+watch(() => props.socket, (newSocket, oldSocket) => {
+  // Clean up old listener if there was a previous socket
+  if (oldSocket) {
+    oldSocket.removeEventListener('message', processMessage);
+  }
+
+  // Add listener to new socket
+  if (newSocket) {
+    console.log('Socket connected in CreateListenerTab');
+    newSocket.addEventListener('message', processMessage);
     console.log("WebSocket message listener added in CreateListenerTab");
   }
-});
+}, { immediate: true });
 
-// Clean up when component is unmounted
+// We can still use onUnmounted for final cleanup
 onUnmounted(() => {
   if (props.socket) {
     props.socket.removeEventListener('message', processMessage);
+    console.log("Removed WebSocket listener in CreateListenerTab");
   }
 });
 
