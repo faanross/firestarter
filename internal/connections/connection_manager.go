@@ -19,6 +19,7 @@ type ConnectionManager struct {
 
 // NewConnectionManager creates a new ConnectionManager with an initialized connections map
 func NewConnectionManager() *ConnectionManager {
+	fmt.Println("[🔌CON] -> Connection Manager initialized.")
 	return &ConnectionManager{
 		connections:       make(map[string]interfaces.Connection),
 		connectionHistory: make(map[string][]string),
@@ -68,7 +69,7 @@ func (cm *ConnectionManager) AddConnection(conn interfaces.Connection) {
 			Payload: connInfo,
 		})
 
-		fmt.Printf("[WS-DEBUG] Broadcasted ConnectionCreated event for %s\n", id)
+		fmt.Printf("[🔌CON] ->  Broadcasted ConnectionCreated event for %s\n", id)
 	}
 }
 
@@ -89,7 +90,7 @@ func (cm *ConnectionManager) RemoveConnection(id string) {
 		// Note: We intentionally keep the connection in history
 		// This preserves the connection history for future reference
 
-		fmt.Printf("Connection removed: %s (UUID: %s, Total remaining: %d)\n",
+		fmt.Printf("[🛑STP] -> Connection removed: %s (UUID: %s, Total remaining: %d)\n\n",
 			id, agentUUID, len(cm.connections))
 
 		// Broadcast connection stopped event to WebSocket clients
@@ -99,7 +100,6 @@ func (cm *ConnectionManager) RemoveConnection(id string) {
 				Payload: connInfo,
 			})
 
-			fmt.Printf("[WS-DEBUG] Broadcasted ConnectionStopped event for %s\n", id)
 		}
 	}
 }
@@ -133,7 +133,7 @@ func (cm *ConnectionManager) GetConnection(id string) (interfaces.Connection, bo
 	conn, exists := cm.connections[id]
 
 	if exists && conn.GetAgentUUID() != "" {
-		fmt.Printf("[DBG🪲] -> Connection manager: Retrieved connection %s with UUID %s\n",
+		fmt.Printf("[🔌CON] -> Connection manager: Retrieved connection %s with UUID %s\n",
 			id, conn.GetAgentUUID())
 	}
 
@@ -146,5 +146,4 @@ func (cm *ConnectionManager) SetWebSocketServer(server *websocket.SocketServer) 
 	defer cm.mu.Unlock()
 	cm.wsServer = server
 	fmt.Println("[🔗LNK] -> Connection Manager linked to WebSocket server.")
-	fmt.Printf("===========================================================\n")
 }

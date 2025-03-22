@@ -16,4 +16,6 @@ func SetupRoutes(r chi.Router) {
 	// Add test endpoints for connection tracking verification
 	r.Get("/quick", QuickResponseHandler)
 	r.Get("/slow", SlowResponseHandler)
+
+	r.Post("/ping", PingHandler)
 }

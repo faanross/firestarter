@@ -15,23 +15,18 @@ import (
 type Factory struct{}
 
 func (f *Factory) CreateListener(id string, port string, connManager interfaces.ConnectionManager) (types.Listener, error) {
-	// Create a router and set up routes
 	r := chi.NewRouter()
 	router.SetupRoutes(r)
 
-	// Configure for HTTP/2
 	h2s := &http2.Server{}
 
-	// Wrap the router with h2c handler
-	// This allows HTTP/2 connection over cleartext TCP
 	h2cHandler := h2c.NewHandler(r, h2s)
 
-	fmt.Printf("|CREATE| HTTP/2 Listener %s configured on port %s\n", id, port)
+	fmt.Printf("[👂🏻LSN] -> Listener (%s) created on port %s, protocol %s\n",
+		id, port, interfaces.GetProtocolName(interfaces.H2C))
 
-	// Create a concrete listener with the H2C protocol type
 	concreteListener := listener.NewConcreteListener(id, port, interfaces.H2C, r, connManager)
 
-	// Set the H2C handler to be used when starting the server
 	concreteListener.SetHandler(h2cHandler)
 
 	return concreteListener, nil

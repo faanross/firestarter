@@ -30,3 +30,16 @@ func SlowResponseHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Slow request completed on:", r.URL.Path)
 	w.Write([]byte("Slow response completed after 10 seconds"))
 }
+
+// PingHandler responds to ping requests from agents
+func PingHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Ping request received from:", r.RemoteAddr)
+
+	// Extract and log the agent UUID for debugging
+	agentUUID := r.Header.Get("X-Agent-UUID")
+	if agentUUID != "" {
+		fmt.Printf("Ping from agent with UUID: %s\n", agentUUID)
+	}
+
+	w.Write([]byte("pong"))
+}

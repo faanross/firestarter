@@ -39,13 +39,13 @@ func (f *Factory) CreateListener(id string, port string, connManager interfaces.
 	r := chi.NewRouter()
 	router.SetupRoutes(r)
 
-	// Create the listener
 	concreteListener := listener.NewConcreteListener(id, port, interfaces.H2TLS, r, connManager)
 
-	// Set the TLS configuration
 	concreteListener.SetTLSConfig(tlsConfig)
 
-	// Add post-init function to configure HTTP/2
+	fmt.Printf("[👂🏻LSN] -> Listener (%s) created on port %s, protocol %s\n",
+		id, port, interfaces.GetProtocolName(interfaces.H2TLS))
+
 	concreteListener.SetPostServerInitFunc(func(server *http.Server) {
 		fmt.Printf("|DEBUG| Configuring HTTP/2 for server on port %s\n", port)
 		http2.ConfigureServer(server, &http2.Server{})

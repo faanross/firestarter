@@ -22,6 +22,7 @@ type ConnectionRegistry struct {
 
 // NewConnectionRegistry creates a new connection registry
 func NewConnectionRegistry() *ConnectionRegistry {
+	fmt.Println("[🌎REG] -> Global Connection Registry initialized.")
 	return &ConnectionRegistry{
 		connMap:        make(map[string]string), // remoteAddr : conn ID
 		uuidMap:        make(map[string]string), // conn ID : UUID
@@ -35,8 +36,6 @@ func (cr *ConnectionRegistry) SetConnectionManager(cm interfaces.ConnectionManag
 	defer cr.mutex.Unlock()
 	cr.connManager = cm
 	fmt.Println("[🔗LNK] -> Global Registry linked to Connection Manager.")
-	fmt.Println("=================================================================")
-	fmt.Println()
 }
 
 // RegisterConnection associates a TCP connection with a connection ID
@@ -47,7 +46,8 @@ func (cr *ConnectionRegistry) RegisterConnection(conn net.Conn, connID string) {
 	remoteAddr := conn.RemoteAddr().String()
 	cr.connMap[remoteAddr] = connID
 
-	fmt.Printf("[UUID-Track-DEBUG] Registry: Mapped remote address %s to connection ID %s\n",
+	fmt.Printf("[🟢NEW] -> New Connection from: %s\n", remoteAddr)
+	fmt.Printf("[REG🌎] -> Mapped %s to connection ID %s\n",
 		remoteAddr, connID)
 }
 
@@ -116,7 +116,6 @@ func (cr *ConnectionRegistry) GetRemoteAddrByConnID(connID string) string {
 // InitializeConnectionRegistry creates and sets up the global connection registry
 func InitializeConnectionRegistry() {
 	if GlobalConnectionRegistry == nil {
-		fmt.Printf("\n==============>🌎INIT GLOBAL CONNECTION REGISTRY🌎<==============\n")
 		GlobalConnectionRegistry = NewConnectionRegistry()
 	}
 }

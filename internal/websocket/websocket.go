@@ -42,7 +42,6 @@ func NewWebSocketServer(port int) *SocketServer {
 
 // StartWebSocketServer initializes and starts the WebSocket server
 func StartWebSocketServer(wsp int) {
-	fmt.Printf("\n==============>🔧CREATING WEBSOCKET SERVER🔧<==============\n")
 
 	// Create and store global instance
 	GlobalWSServer = NewWebSocketServer(wsp)
@@ -57,7 +56,6 @@ func StartWebSocketServer(wsp int) {
 	// Give the WebSocket server a moment to start
 	time.Sleep(100 * time.Millisecond)
 	fmt.Printf("[🔧WSS] -> WebSocket server is running on :%d.\n", wsp)
-	fmt.Println("[🖥️WUI] -> You can now connect from the Web UI.")
 
 }
 
@@ -90,7 +88,7 @@ func (s *SocketServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	s.clients[conn] = true
 	s.mu.Unlock()
 
-	fmt.Println("[🔧WSS] -> WebSocket connection established.")
+	fmt.Printf("[🔧WSS] -> WebSocket connection established - %s.\n", time.Now().Format(time.RFC3339))
 
 	// Clean up on disconnect
 	defer func() {

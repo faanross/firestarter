@@ -77,6 +77,6 @@ func GetDefaultCertificateProvider() (*FileCertificateProvider, error) {
 		return nil, fmt.Errorf("[❌ERR] -> Key file not found: %s", keyFile)
 	}
 
-	fmt.Printf("[🔐TLS] -> TLS Key and Cert loaded successfully.\n\n")
+	fmt.Println("[🔐TLS] -> TLS Key and Cert loaded successfully.")
 	return NewFileCertificateProvider(certFile, keyFile), nil
 }

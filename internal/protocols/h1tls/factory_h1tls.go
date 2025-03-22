@@ -40,7 +40,8 @@ func (f *Factory) CreateListener(id string, port string, connManager interfaces.
 	// Set the TLS configuration
 	concreteListener.SetTLSConfig(tlsConfig)
 
-	fmt.Printf("|CREATE| HTTP/1.1 TLS Listener %s configured on port %s\n", id, port)
+	fmt.Printf("[👂🏻LSN] -> Listener (%s) created on port %s, protocol %s\n",
+		id, port, interfaces.GetProtocolName(interfaces.H1TLS))
 
 	return concreteListener, nil
 }

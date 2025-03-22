@@ -37,10 +37,10 @@ func main() {
 
 	// Create agents for each protocol
 	agents := []test_agent.Agent{
-		test_agent.NewHTTP1Agent("7777"),
-		test_agent.NewHTTP2ClearAgent("8888"),
-		test_agent.NewHTTP1TLSAgent("9999"),
-		test_agent.NewHTTP2TLSAgent("11111"),
+		test_agent.NewHTTP1Agent("7676"),
+		//test_agent.NewHTTP2ClearAgent("8888"),
+		//test_agent.NewHTTP1TLSAgent("9999"),
+		//test_agent.NewHTTP2TLSAgent("11111"),
 		//test_agent.NewHTTP3Agent("22222"),
 	}
 

@@ -8,12 +8,13 @@ import (
 
 // ListenerManager keeps track of all active listeners
 type ListenerManager struct {
-	listeners map[string]types.Listener
+	listeners map[string]types.Listener // maps listener ID to listener instance
 	mu        sync.RWMutex
 }
 
 // NewListenerManager creates a new listener manager
 func NewListenerManager() *ListenerManager {
+	fmt.Println("[👂🏻LSN] -> Listener Manager initialized.")
 	return &ListenerManager{
 		listeners: make(map[string]types.Listener),
 	}

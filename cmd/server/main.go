@@ -18,34 +18,35 @@ import (
 
 var WebSocketPort = 8080
 
+var connectionMonitor = time.Minute * 5
+
 func main() {
 	// Setup channel for SIGINT shutdown signal
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
 	// Setup all major server components + services
-	listenerManager, listenerService := ApplicationSetup()
+	listenerService := ApplicationSetup()
 
 	// Wait group for synchronization
 	var wg sync.WaitGroup
 
 	time.Sleep(1 * time.Second)
-	fmt.Printf("Managing %d active listeners.\n",
-		listenerManager.Count())
 
 	// Add connection tracking test
-	service.ConnectionTrackingUpdate(listenerService)
+	service.ConnectionTrackingUpdate(listenerService, connectionMonitor)
 
 	// Block until we receive a termination signal
 	sig := <-signalChan
 
-	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
-
 	// Use the service to stop all listeners
+	fmt.Printf("\nReceived signal: %v. Starting graceful shutdown...\n", sig)
 	listenerService.StopAllListeners(&wg)
 }
 
-func ApplicationSetup() (*manager.ListenerManager, *service.ListenerService) {
+func ApplicationSetup() *service.ListenerService {
+	fmt.Println("===============>⚙️PERFORMING APPLICATION SETUP⚙️<===============")
+
 	// Start our Websocket Server for UI integration
 	websocket.StartWebSocketServer(WebSocketPort)
 
@@ -72,9 +73,14 @@ func ApplicationSetup() (*manager.ListenerManager, *service.ListenerService) {
 	lm := manager.NewListenerManager()
 	ls := service.NewListenerService(af, lm, connectionManager)
 
-	// ConnectToWebSocket allows our service and websocket to communicate with one another
+	// ConnectToWebSocket registers Listeners Service with WSS -> Allows UI to execute commands on server
 	ls.ConnectToWebSocket()
 
-	return lm, ls
+	fmt.Println("================================================================")
+	fmt.Println()
+	fmt.Println("[🖥️WUI] -> YOU CAN NOW CONNECT FROM THE WEB UI <- [WUI🖥️]")
+	fmt.Println()
+
+	return ls
 
 }

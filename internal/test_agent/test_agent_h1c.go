@@ -48,7 +48,7 @@ func (a *HTTP1Agent) Start() error {
 
 	// Start background health check loop
 	go func() {
-		ticker := time.NewTicker(10 * time.Second)
+		ticker := time.NewTicker(60 * time.Second)
 		defer ticker.Stop()
 
 		for {

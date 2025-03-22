@@ -15,8 +15,7 @@ type Factory struct{}
 func (f *Factory) CreateListener(id string, port string, connManager interfaces.ConnectionManager) (types.Listener, error) {
 	r := chi.NewRouter()
 	router.SetupRoutes(r)
-
-	fmt.Printf("|CREATE| HTTP/1.1 Listener %s configured on port %s\n", id, port)
-
+	fmt.Printf("[👂🏻LSN] -> Listener (%s) created on port %s, protocol %s\n",
+		id, port, interfaces.GetProtocolName(interfaces.H1C))
 	return listener.NewConcreteListener(id, port, interfaces.H1C, r, connManager), nil
 }

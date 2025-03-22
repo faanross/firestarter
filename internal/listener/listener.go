@@ -39,11 +39,8 @@ func (l *ConcreteListener) SetHandler(handler http.Handler) {
 func (l *ConcreteListener) Start() error {
 	addr := fmt.Sprintf(":%s", l.Port)
 
-	fmt.Printf("|DEBUG| Starting %s Listener with protocol %v\n", l.ID, l.Protocol)
-	fmt.Printf("|DEBUG| TLS Config present: %v\n", l.tlsConfig != nil)
-	fmt.Printf("|DEBUG| Server pre-configured: %v\n", l.server != nil)
-
-	fmt.Printf("|START| %s Listener %s serving on %s\n", l.GetProtocol(), l.ID, addr)
+	fmt.Printf("[👂🏻LSN] -> Listener (%s) serving on %s, protocol %s\n", l.ID, addr, l.GetProtocol())
+	fmt.Println()
 
 	// Create a standard TCP listener
 	tcpListener, err := net.Listen("tcp", addr)
@@ -65,6 +62,27 @@ func (l *ConcreteListener) Start() error {
 				return l.Router
 			}(),
 			TLSConfig: l.tlsConfig,
+
+			ReadTimeout:       0, // No timeout (unlimited)
+			WriteTimeout:      0, // No timeout (unlimited)
+			IdleTimeout:       0, // Never timeout idle connections
+			ReadHeaderTimeout: 0, // No timeout for reading headers
+		}
+
+		// TCP keep-alive configuration
+		l.server.ConnState = func(conn net.Conn, state http.ConnState) {
+			// When a connection is new or active
+			if state == http.StateNew || state == http.StateActive {
+				if tcpConn, ok := conn.(*net.TCPConn); ok {
+					// Configure TCP keep-alive to be extremely lenient
+					// Enable keep-alive
+					tcpConn.SetKeepAlive(true)
+					// Set keep-alive period to 5 minutes (much longer than default)
+					tcpConn.SetKeepAlivePeriod(5 * time.Minute)
+
+					fmt.Printf("[🔌CON] -> Configured TCP connection with 5-minute keep-alive period\n")
+				}
+			}
 		}
 
 		// Call the post-initialization function if set

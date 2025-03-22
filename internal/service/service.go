@@ -9,7 +9,6 @@ import (
 	"firestarter/internal/types"
 	"firestarter/internal/websocket"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -24,6 +23,8 @@ type ListenerService struct {
 
 // NewListenerService creates a new listener service
 func NewListenerService(factory *factory.AbstractFactory, manager *manager.ListenerManager, connManager *connections.ConnectionManager) *ListenerService {
+	fmt.Println("[👂🏻LSN] -> Listener Service initialized.")
+
 	return &ListenerService{
 		factory:     factory,
 		manager:     manager,
@@ -36,13 +37,13 @@ func (s *ListenerService) CreateAndStartListener(protocol interfaces.ProtocolTyp
 	// Create the listener with the potentially custom ID
 	listener, err := s.factory.CreateListener(protocol, port, customID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create listener: %w", err)
+		return nil, fmt.Errorf("[❌ERR] -> Failed to create listener: %w", err)
 	}
 
 	// Register with the manager
 	err = s.manager.AddListener(listener)
 	if err != nil {
-		return nil, fmt.Errorf("failed to register listener: %w", err)
+		return nil, fmt.Errorf("[❌ERR] -> Failed to register listener: %w", err)
 	}
 
 	// Broadcast the creation to WebSocket clients
@@ -181,69 +182,6 @@ func (s *ListenerService) GetConnectionCount() int {
 	return s.connManager.Count()
 }
 
-// LogConnectionStatus prints comprehensive connection status information
-func (s *ListenerService) LogConnectionStatus() {
-	connections := s.connManager.GetAllConnections()
-	fmt.Printf("\n==== CONNECTION STATUS REPORT ====\n")
-	fmt.Printf("Total active connections: %d\n", len(connections))
-
-	// Group by protocol
-	protocolCounts := make(map[interfaces.ProtocolType]int)
-
-	fmt.Printf("[CONN-STATUS-DEBUG] Found protocol counts: %v\n", protocolCounts)
-
-	for _, conn := range connections {
-		protocolCounts[conn.GetProtocol()]++
-	}
-
-	// Print counts by protocol with percentage
-	fmt.Println("\nBreakdown by protocol:")
-	for protocol, count := range protocolCounts {
-		percentage := float64(count) / float64(len(connections)) * 100
-		fmt.Printf("  - %s: %d connections (%.1f%%)\n",
-			interfaces.GetProtocolName(protocol), count, percentage)
-	}
-
-	// List a sample of connections
-	if len(connections) > 0 {
-		fmt.Println("\nSample connections:")
-		maxToShow := 3
-		shown := 0
-		for _, conn := range connections {
-			if shown >= maxToShow {
-				break
-			}
-			fmt.Printf("  - ID: %s, Protocol: %s, Created: %s\n",
-				conn.GetID(),
-				interfaces.GetProtocolName(conn.GetProtocol()),
-				conn.GetCreatedAt().Format(time.RFC3339))
-			shown++
-		}
-
-		if len(connections) > maxToShow {
-			fmt.Printf("  (and %d more...)\n", len(connections)-maxToShow)
-		}
-	}
-
-	fmt.Println("==================================\n")
-}
-
-// StartConnectionMonitor begins periodic monitoring of connection status
-func (s *ListenerService) StartConnectionMonitor(interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	go func() {
-		for {
-			<-ticker.C
-			connectionCount := s.GetConnectionCount()
-			if connectionCount > 0 {
-				fmt.Printf("\n[%s] Connection monitor:\n", time.Now().Format(time.RFC3339))
-				s.LogConnectionStatus()
-			}
-		}
-	}()
-	fmt.Printf("Connection monitor started (interval: %s)\n", interval)
-}
-
 // ConnectionStats represents statistics about the active connections
 type ConnectionStats struct {
 	TotalConnections      int
@@ -341,7 +279,8 @@ func (s *ListenerService) IsPortAvailable(port string) bool {
 
 	// If there was an error, the port is not available
 	if err != nil {
-		log.Printf("[❌ERR] -> Port %s is not available: %v", port, err)
+		fmt.Printf("[❌ERR] -> Port %s is not available\n", port)
+		fmt.Printf("[❌ERR] -> %v (%s)\n", err, time.Now().Format(time.RFC3339))
 		return false
 	}
 

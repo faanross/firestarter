@@ -274,7 +274,6 @@ func (s *SocketServer) processClientMessage(conn *websocket.Conn, rawMessage []b
 		}
 		s.sendMessage(conn, successResponse)
 
-		fmt.Printf("[🆕NEW] -> Listener %s created successfully via WebSocket\n", listener.GetID())
 	default:
 		log.Printf("[❌ERR] -> Unknown command: %s.", cmd.Action)
 	}

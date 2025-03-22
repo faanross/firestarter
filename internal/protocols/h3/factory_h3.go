@@ -33,9 +33,7 @@ func (f *Factory) CreateListener(id string, port string, connManager interfaces.
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TLS configuration for HTTP/3: %w", err)
 	}
-
-	fmt.Printf("[H3-FACTORY-DEBUG] Created TLS config for HTTP/3 with NextProtos: %v\n", tlsConfig.NextProtos)
-
+	
 	// Configure for HTTP/3 (ALPN)
 	tlsConfig.NextProtos = []string{"h3", "h3-29"}
 
@@ -59,12 +57,11 @@ func (f *Factory) CreateListener(id string, port string, connManager interfaces.
 		connManager,
 	)
 
-	fmt.Printf("[H3-FACTORY-DEBUG] HTTP/3 listener created, setting TLS config\n")
-
 	// Configure TLS
 	listener.SetTLSConfig(tlsConfig)
 
-	fmt.Printf("|CREATE| HTTP/3 Listener %s configured on port %s\n", id, port)
+	fmt.Printf("[👂🏻LSN] -> Listener (%s) created on port %s, protocol %s\n",
+		id, port, interfaces.GetProtocolName(interfaces.H3))
 
 	return listener, nil
 }

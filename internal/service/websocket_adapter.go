@@ -15,6 +15,7 @@ func (s *ListenerService) ConnectToWebSocket() {
 
 	// Register the adapter with the WebSocket server
 	websocket.RegisterServiceBridge(adapter)
+	fmt.Println("[🔗LNK] -> Listener Service registered with WebSocket.")
 }
 
 // Private adapter type that implements the ServiceBridge interface
@@ -93,9 +94,6 @@ func (a *websocketAdapter) CreateListener(id string, protocol int, port string) 
 	if err != nil {
 		return nil, fmt.Errorf("[❌ERR] -> Failed to create listener: %w", err)
 	}
-
-	fmt.Printf("[🆕NEW] -> Listener %s created on port %s using protocol %s\n",
-		listener.GetID(), listener.GetPort(), listener.GetProtocol())
 
 	return listener, nil
 }

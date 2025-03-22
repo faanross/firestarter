@@ -41,6 +41,9 @@ func NewAbstractFactory(connManager *connections.ConnectionManager) *AbstractFac
 	h2tlsFactory := h2tls.NewFactory(certProvider)
 	h3Factory := h3.NewFactory(certProvider)
 
+	fmt.Println("[🏭ABS] -> Loaded AbstractFactory with certificates.")
+	fmt.Println("[🏭ABS] -> All protocols available as listeners.")
+
 	return &AbstractFactory{
 		factories: map[interfaces.ProtocolType]types.ListenerFactory{
 			interfaces.H1C:   &h1c.Factory{},

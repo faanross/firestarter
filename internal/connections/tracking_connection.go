@@ -49,6 +49,9 @@ func NewTrackingConnection(conn net.Conn, trackedConn interfaces.Connection,
 		closed:      false,
 	}
 
+	// Configure TCP settings
+	tc.Configure()
+
 	// Register this connection with the global registry
 	if connectionRegistry != nil {
 		registryInitLock.Lock()
@@ -86,7 +89,6 @@ func (tc *TrackingConnection) Close() error {
 	tc.closed = true
 
 	// Remove from connection manager
-	fmt.Printf("Connection closed: %s\n", tc.trackedConn.GetID())
 	tc.manager.RemoveConnection(tc.trackedConn.GetID())
 
 	// Close the underlying connection
@@ -111,4 +113,13 @@ func (tc *TrackingConnection) SetReadDeadline(t time.Time) error {
 
 func (tc *TrackingConnection) SetWriteDeadline(t time.Time) error {
 	return tc.conn.SetWriteDeadline(t)
+}
+
+func (tc *TrackingConnection) Configure() {
+	// Configure TCP keep-alive if this is a TCP connection
+	if tcpConn, ok := tc.conn.(*net.TCPConn); ok {
+		tcpConn.SetKeepAlive(true)
+		tcpConn.SetKeepAlivePeriod(5 * time.Minute)
+		fmt.Printf("[🔌CON] -> Configured tracking connection with 5-minute keep-alive\n")
+	}
 }
