@@ -44,15 +44,15 @@ func (p *H1CProtocol) Initialize(config ProtocolConfig) error {
 		Timeout: config.RequestTimeout,
 		Transport: &http.Transport{
 			MaxIdleConns:        1,
-			IdleConnTimeout:     90 * time.Second,
+			IdleConnTimeout:     24 * time.Hour,
 			DisableCompression:  true,
-			MaxConnsPerHost:     1,
+			MaxConnsPerHost:     5,
 			ForceAttemptHTTP2:   false, // Ensure HTTP/1.1 is used
 			TLSHandshakeTimeout: config.ConnectionTimeout,
 			// Custom dialer with keepalives enabled
 			DialContext: (&net.Dialer{
 				Timeout:   config.ConnectionTimeout,
-				KeepAlive: 30 * time.Second, // Send keepalive every 30 seconds
+				KeepAlive: 5 * time.Minute, // Send keepalive every 30 seconds
 			}).DialContext,
 		},
 	}
@@ -62,7 +62,7 @@ func (p *H1CProtocol) Initialize(config ProtocolConfig) error {
 
 // Connect establishes a connection to the server
 func (p *H1CProtocol) Connect(ctx context.Context) error {
-	// Create a simple GET request to check if the server is reachable
+	// Create request to check if server is reachable
 	targetURL := fmt.Sprintf("http://%s:%s%s",
 		p.config.TargetHost,
 		p.config.TargetPort,
@@ -82,9 +82,12 @@ func (p *H1CProtocol) Connect(ctx context.Context) error {
 		p.setConnected(false)
 		return fmt.Errorf("connection failed: %w", err)
 	}
-	defer resp.Body.Close()
 
-	// Check if the response is successful (2xx status code)
+	// Fully read and discard the response body to properly reuse the connection
+	io.Copy(io.Discard, resp.Body)
+	resp.Body.Close() // Close immediately after reading
+
+	// Check if the response is successful
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		p.setConnected(false)
 		return fmt.Errorf("server returned non-success status: %d", resp.StatusCode)
@@ -162,18 +165,17 @@ func (p *H1CProtocol) SendRequest(ctx context.Context, endpoint string, payload 
 
 // PerformHealthCheck conducts a health check against the server
 func (p *H1CProtocol) PerformHealthCheck(ctx context.Context) error {
-	// Similar to Connect, but we just check if the server is reachable
-	targetURL := fmt.Sprintf("http://%s:%s%s",
+	// Create a simple GET request to any endpoint (root is fine)
+	targetURL := fmt.Sprintf("http://%s:%s/",
 		p.config.TargetHost,
-		p.config.TargetPort,
-		p.config.HealthCheckEndpoint)
+		p.config.TargetPort)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", targetURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create health check request: %w", err)
 	}
 
-	// Add the agent UUID
+	// Add the agent UUID header
 	req.Header.Set("X-Agent-UUID", p.config.AgentUUID)
 
 	// Send the request
@@ -182,15 +184,12 @@ func (p *H1CProtocol) PerformHealthCheck(ctx context.Context) error {
 		p.setConnected(false)
 		return fmt.Errorf("health check failed: %w", err)
 	}
-	defer resp.Body.Close()
 
-	// Check if the response is successful
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		p.setConnected(false)
-		return fmt.Errorf("health check returned non-success status: %d", resp.StatusCode)
-	}
+	// The one crucial step: fully read the response body before closing
+	io.Copy(io.Discard, resp.Body)
+	resp.Body.Close()
 
-	// Update connection status and last activity
+	// We got a response, so we're connected!
 	p.setConnected(true)
 	p.updateLastActivity()
 

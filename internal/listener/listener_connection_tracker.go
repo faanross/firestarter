@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"time"
 )
 
 type ConnectionTrackingListener struct {
@@ -38,6 +39,12 @@ func (ctl *ConnectionTrackingListener) Accept() (net.Conn, error) {
 	conn, err := ctl.Listener.Accept()
 	if err != nil {
 		return nil, err
+	}
+
+	// Configure TCP keep-alive on the raw connection
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
+		tcpConn.SetKeepAlive(true)
+		tcpConn.SetKeepAlivePeriod(5 * time.Minute)
 	}
 
 	var managedConn interfaces.Connection

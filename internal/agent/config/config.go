@@ -52,7 +52,7 @@ func DefaultConfig() *Config {
 		ConnectionTimeout:   60 * time.Second, // kernel will try incremental transmissions up until 60 sec
 		ReconnectDelay:      30 * time.Minute, // if not able to connect, wait 30 mins, try process again
 		RequestTimeout:      5 * time.Minute,  // very generous here since unplanned timeouts can be an issue
-		HealthCheckInterval: 30 * time.Second,
+		HealthCheckInterval: 45 * time.Second,
 		HealthCheckEndpoint: "/",
 	}
 }
