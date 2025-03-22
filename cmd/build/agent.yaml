@@ -1,0 +1,32 @@
+# Build configuration
+build:
+  # Target operating system (darwin, linux, windows)
+  os: darwin
+
+  # Target architecture (amd64, arm64, 386)
+  arch: amd64
+
+  # Desired binary name (if empty, will be auto-generated)
+  name: ""
+
+  # Output directory
+  output_dir: bin
+
+# Agent configuration
+agent:
+  # Communication protocol (h1c, NOT YET IMPLEMENTED: h1tls , h2c, h2tls, h3)
+  protocol: h1c
+
+  # Server connection details
+  target_host: localhost
+  target_port: 7777
+
+  # Connection management
+  reconnect_attempts: 99999  # Set to -1 for unlimited
+  reconnect_delay: 30m       # Format: 30m = 30 minutes
+  connection_timeout: 90s
+  request_timeout: 5m
+
+  # Health check settings
+  health_check_interval: 30s
+  health_check_endpoint: /

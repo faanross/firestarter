@@ -276,3 +276,32 @@ func (a *Agent) setLastError(err error) {
 	defer a.lastErrorLock.Unlock()
 	a.lastError = err
 }
+
+// TestConnection sends a simple request to the server to verify connectivity
+func (a *Agent) TestConnection() error {
+	if !a.isRunning() {
+		return fmt.Errorf("agent is not running")
+	}
+
+	if !a.protocol.IsConnected() {
+		return fmt.Errorf("agent is not connected to server")
+	}
+
+	// Create a simple test payload
+	payload := []byte("ping")
+
+	log.Println("Sending test request to server...")
+
+	// Use a shorter timeout for the test
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Send the request to a test endpoint
+	response, err := a.protocol.SendRequest(ctx, "/ping", payload)
+	if err != nil {
+		return fmt.Errorf("test request failed: %w", err)
+	}
+
+	log.Printf("Received response from server: %s", string(response))
+	return nil
+}
